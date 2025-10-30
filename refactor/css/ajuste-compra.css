@@ -1,0 +1,115 @@
+/* Estilos gerais para a página de ajuste de compras */
+.ajuste-compra-container {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2, h3 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+/* Estilos para a seleção de compra */
+.compra-selection {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #eef;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.compra-selection label {
+    margin-right: 10px;
+    font-weight: bold;
+    color: #555;
+}
+
+.compra-selection select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    width: 100%;
+    max-width: 300px;
+    box-sizing: border-box;
+}
+
+/* Estilos para os detalhes da compra */
+.compra-details {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.compra-details p {
+    margin-bottom: 8px;
+    line-height: 1.5;
+    color: #666;
+}
+
+.compra-details p strong {
+    color: #333;
+}
+
+/* Estilos para a tabela de itens */
+.compra-details table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    margin-bottom: 20px;
+}
+
+.compra-details th, .compra-details td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.compra-details th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    color: #444;
+}
+
+.compra-details td input[type="number"] {
+    width: 80px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+/* Estilos para botões */
+button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 10px;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+button.delete-button {
+    background-color: #dc3545;
+}
+
+button.delete-button:hover {
+    background-color: #c82333;
+}

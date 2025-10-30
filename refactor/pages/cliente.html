@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Clientes</title>
+    <link rel="stylesheet" href="../css/cliente.css">
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Dependencias do React -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    
+    <!-- Babel para transpilar JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Axios para requisições HTTP -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <!-- Componente React -->
+    <script type="text/babel" src="../js/pages/ClientePage.jsx"></script>
+
+    <!-- Script para renderizar o componente -->
+    <script type="text/babel">
+        ReactDOM.render(
+            React.createElement(ClientePage),
+            document.getElementById('root')
+        );
+    </script>
+</body>
+</html>
