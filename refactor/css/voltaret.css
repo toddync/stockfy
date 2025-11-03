@@ -1,0 +1,111 @@
+.voltaret-container {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.voltaret-container h2 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-group label {
+    flex: 0 0 120px; /* Largura fixa para os labels */
+    font-weight: bold;
+    color: #555;
+}
+
+.form-group input[type="text"],
+.form-group input[type="password"] {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group button {
+    padding: 8px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.form-group button:hover {
+    background-color: #0056b3;
+}
+
+.form-group button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.status-message {
+    text-align: center;
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: #e7f3fe;
+    color: #0056b3;
+    border: 1px solid #b8daff;
+}
+
+.pedido-details {
+    margin-top: 30px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+.pedido-details h3,
+.pedido-details h4 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.pedido-details p {
+    margin-bottom: 8px;
+    color: #666;
+}
+
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.items-table th,
+.items-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.items-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    color: #333;
+}
+
+.items-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.items-table tbody tr:hover {
+    background-color: #f1f1f1;
+}

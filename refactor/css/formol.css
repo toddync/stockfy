@@ -1,0 +1,25 @@
+/* Estilos básicos para o Formulário de Compras */
+.formol-container {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    max-width: 600px;
+    margin: 20px auto;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.formol-title {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.formol-label {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+/* Adicione mais estilos conforme necessário para outros elementos do formulário */

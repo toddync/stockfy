@@ -1,0 +1,207 @@
+/* Estilos gerais para a página de manutenção de vendedores */
+.manutven-container {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* Controles de busca e botões */
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+.controls select,
+.controls input[type="text"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.controls button {
+    padding: 8px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.controls button:hover {
+    background-color: #0056b3;
+}
+
+/* Tabela de vendedores */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.vendedores-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.vendedores-table th,
+.vendedores-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.vendedores-table th {
+    background-color: #e9ecef;
+    color: #333;
+    font-weight: bold;
+}
+
+.vendedores-table tbody tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.vendedores-table tbody tr:hover {
+    background-color: #e2e6ea;
+}
+
+.vendedores-table td button {
+    padding: 5px 10px;
+    margin-right: 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.vendedores-table td button:nth-child(1) { /* Alterar */
+    background-color: #ffc107;
+    color: #333;
+}
+.vendedores-table td button:nth-child(1):hover {
+    background-color: #e0a800;
+}
+
+.vendedores-table td button:nth-child(2) { /* Consultar */
+    background-color: #17a2b8;
+    color: white;
+}
+.vendedores-table td button:nth-child(2):hover {
+    background-color: #138496;
+}
+
+.vendedores-table td button:nth-child(3) { /* Excluir */
+    background-color: #dc3545;
+    color: white;
+}
+.vendedores-table td button:nth-child(3):hover {
+    background-color: #c82333;
+}
+
+/* Estilos do Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"] {
+    width: calc(100% - 20px);
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group input[readOnly] {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.modal-actions button[type="submit"] {
+    background-color: #28a745;
+    color: white;
+}
+
+.modal-actions button[type="submit"]:hover {
+    background-color: #218838;
+}
+
+.modal-actions button[type="button"] { /* Fechar */
+    background-color: #6c757d;
+    color: white;
+}
+
+.modal-actions button[type="button"]:hover {
+    background-color: #5a6268;
+}
