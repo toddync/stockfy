@@ -1,0 +1,250 @@
+import React, { useState, useEffect } from 'react';
+import Modal from '../components/Modal';
+
+interface Rota {
+  id?: number; // ID is optional for new entries
+  codigo: string;
+  bairro?: string;
+  nome?: string;
+}
+
+const Rotas: React.FC = () => {
+  const [rotas, setRotas] = useState<Rota[]>([]);
+  const [mostrarForm, setMostrarForm] = useState(false);
+  const [rotaEditando, setRotaEditando] = useState<Rota | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    carregarRotas();
+  }, []);
+
+  const carregarRotas = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('http://localhost:3000/api/rotas');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: Rota[] = await response.json();
+      setRotas(data);
+    } catch (e: unknown) { // Changed from any to unknown
+      let message = "Erro desconhecido";
+      if (e instanceof Error) {
+        message = e.message;
+      }
+      setError(`Falha ao carregar rotas: ${message}`);
+      console.error("Erro ao carregar rotas:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const salvarRota = async (rota: Rota) => {
+    setError(null);
+    try {
+      let response;
+      if (rota.id) {
+        // Update existing rota
+        response = await fetch(`http://localhost:3000/api/rotas/${rota.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(rota),
+        });
+      } else {
+        // Create new rota
+        response = await fetch('http://localhost:3000/api/rotas', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(rota),
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      await carregarRotas(); // Reload rotas after save
+      setMostrarForm(false);
+      setRotaEditando(null);
+    } catch (e: unknown) { // Changed from any to unknown
+      let message = "Erro desconhecido";
+      if (e instanceof Error) {
+        message = e.message;
+      }
+      setError(`Falha ao salvar rota: ${message}`);
+      console.error("Erro ao salvar rota:", e);
+    }
+  };
+
+  const deletarRota = async (id: number) => {
+    if (!window.confirm('Confirmar exclusão?')) {
+      return;
+    }
+    setError(null);
+    try {
+      const response = await fetch(`http://localhost:3000/api/rotas/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      await carregarRotas(); // Reload rotas after delete
+    } catch (e: unknown) { // Changed from any to unknown
+      let message = "Erro desconhecido";
+      if (e instanceof Error) {
+        message = e.message;
+      }
+      setError(`Falha ao deletar rota: ${message}`);
+      console.error("Erro ao deletar rota:", e);
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center p-6">Carregando rotas...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center p-6 text-red-600">Erro: {error}</div>;
+  }
+
+  return (
+    <div className="page-container p-6 bg-white shadow-md rounded-lg">
+      <div className="page-header flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">Gerenciar Rotas</h1>
+        <button 
+          onClick={() => { setRotaEditando(null); setMostrarForm(true); }}
+          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
+        >
+          + Nova Rota
+        </button>
+      </div>
+
+      <Modal isOpen={mostrarForm} onClose={() => { setMostrarForm(false); setRotaEditando(null); }}>
+        <RotaForm
+          rota={rotaEditando}
+          onSave={salvarRota}
+          onCancel={() => { setMostrarForm(false); setRotaEditando(null); }}
+        />
+      </Modal>
+
+      <div className="table-container overflow-x-auto">
+        <table className="min-w-full bg-white border border-gray-200">
+          <thead>
+            <tr className="bg-gray-100 border-b">
+              <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Código</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Bairro</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Nome</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rotas.map(rota => (
+              <tr key={rota.id} className="border-b hover:bg-gray-50">
+                <td className="py-3 px-4 text-sm text-gray-700">{rota.codigo}</td>
+                <td className="py-3 px-4 text-sm text-gray-700">{rota.bairro}</td>
+                <td className="py-3 px-4 text-sm text-gray-700">{rota.nome}</td>
+                <td className="py-3 px-4 text-sm">
+                  <button 
+                    onClick={() => { setRotaEditando(rota); setMostrarForm(true); }}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 rounded-md mr-2 transition-colors"
+                  >
+                    Editar
+                  </button>
+                  <button 
+                    onClick={() => deletarRota(rota.id!)}
+                    className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-md transition-colors"
+                  >
+                    Excluir
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// Componente de formulário reutilizável
+const RotaForm: React.FC<{ 
+  rota: Rota | null; 
+  onSave: (rota: Rota) => void; 
+  onCancel: () => void 
+}> = ({ rota, onSave, onCancel }) => {
+  const [formData, setFormData] = useState<Rota>(rota || {
+    codigo: '', bairro: '', nome: ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="form-container bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">{rota ? 'Editar' : 'Nova'} Rota</h2>
+      
+      <div className="mb-4">
+        <label htmlFor="codigo" className="block text-gray-700 text-sm font-bold mb-2">Código:</label>
+        <input
+          type="text"
+          id="codigo"
+          placeholder="Código"
+          value={formData.codigo}
+          onChange={e => setFormData({...formData, codigo: e.target.value})}
+          required
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label htmlFor="bairro" className="block text-gray-700 text-sm font-bold mb-2">Bairro:</label>
+        <input
+          type="text"
+          id="bairro"
+          placeholder="Bairro"
+          value={formData.bairro || ''}
+          onChange={e => setFormData({...formData, bairro: e.target.value})}
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          />
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="nome" className="block text-gray-700 text-sm font-bold mb-2">Nome:</label>
+          <input
+            type="text"
+            id="nome"
+            placeholder="Nome"
+            value={formData.nome || ''}
+            onChange={e => setFormData({...formData, nome: e.target.value})}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          />
+        </div>
+        
+        <div className="form-actions flex justify-end gap-4">
+          <button 
+            type="submit"
+            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
+          >
+            Salvar
+          </button>
+          <button 
+            type="button" 
+            onClick={onCancel}
+            className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    );
+  };
+  
+  export default Rotas;

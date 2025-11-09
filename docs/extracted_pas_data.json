@@ -1,0 +1,398 @@
+{
+    "tables_schema": {
+        "Cliente": {
+            "component_name": "IBTCliente",
+            "fields": {
+                "IDCLI": "TIntegerField",
+                "NCPF": "TIBStringField",
+                "NIFP": "TIBStringField",
+                "BAIR": "TIBStringField",
+                "CIDA": "TIBStringField",
+                "ESTA": "TIBStringField",
+                "NCEP": "TIBStringField",
+                "NTEL": "TIBStringField",
+                "CONTA": "TIBStringField",
+                "VEND": "TIBStringField",
+                "LCRED": "TIBBCDField",
+                "DATIMP": "TIBStringField",
+                "NOMMAE": "TIBStringField",
+                "NOMPAI": "TIBStringField",
+                "DATNASC": "TIBStringField",
+                "NATU": "TIBStringField",
+                "ROTA": "TIBStringField",
+                "PRACA": "TIBStringField",
+                "REFER": "TIBStringField",
+                "OLDCLI": "TIBStringField",
+                "SITU": "TIBStringField",
+                "NOME": "TIBStringField",
+                "ENDE": "TIBStringField",
+                "HORAIN": "TIBStringField",
+                "HORAFIN": "TIBStringField",
+                "VISITA": "TIBStringField",
+                "ATIVO": "TIBStringField",
+                "ESPED": "TIBStringField",
+                "OBSV": "TBlobField"
+            }
+        },
+        "Artigo": {
+            "component_name": "IBTArtigo",
+            "fields": {
+                "CODIGO": "TIBStringField",
+                "GRUPO": "TIBStringField",
+                "DESCRICAO": "TIBStringField",
+                "CUSTO": "TIBBCDField",
+                "VENDA": "TIBBCDField",
+                "ESTOQ": "TIBBCDField",
+                "UDATA": "TIBStringField",
+                "TABEL": "TIBStringField",
+                "PRECOM": "TIBBCDField"
+            }
+        },
+        "Vendedor": {
+            "component_name": "IBTVendedor",
+            "fields": {
+                "CODVEN": "TIBStringField",
+                "NOME": "TIBStringField",
+                "NCPF": "TIBStringField",
+                "NIFP": "TIBStringField",
+                "ENDE": "TIBStringField",
+                "BAIR": "TIBStringField",
+                "CIDA": "TIBStringField",
+                "ESTA": "TIBStringField",
+                "NCEP": "TIBStringField",
+                "NTEL": "TIBStringField",
+                "PRACA1": "TIBStringField",
+                "PRACA2": "TIBStringField",
+                "PRACA3": "TIBStringField",
+                "PRACA4": "TIBStringField",
+                "EMAIL": "TIBStringField",
+                "DATSOL": "TIBStringField",
+                "NUMSOL": "TIBStringField"
+            }
+        },
+        "Compra": {
+            "component_name": "IBTCompra",
+            "fields": {
+                "DATPED": "TDateField",
+                "TIPPED": "TIBStringField",
+                "NUMPED": "TIBStringField",
+                "FORNEC": "TIBStringField",
+                "ENTREG": "TDateField",
+                "TOTPED": "TIBBCDField",
+                "DATNOT": "TDateField",
+                "TIPNOT": "TIBStringField",
+                "NUMNOT": "TIBStringField",
+                "DESCON": "TIBBCDField",
+                "FRETE": "TIBBCDField",
+                "VALNOT": "TIBBCDField",
+                "SITPED": "TIBStringField",
+                "PARCEL": "TIBStringField",
+                "OBSERV": "TBlobField"
+            }
+        },
+        "Devolucao": {
+            "component_name": "IBTDevolucao",
+            "fields": {
+                "NUMNOT": "TIBStringField",
+                "DATNOT": "TDateField",
+                "VALNOT": "TIBBCDField",
+                "ROMNOT": "TIBStringField",
+                "CODVEN": "TIBStringField",
+                "DATBAS": "TDateField",
+                "CLIENOT": "TIBStringField"
+            }
+        },
+        "Defeito": {
+            "component_name": "IBTDefeito",
+            "fields": {
+                "NUMNOT": "TIBStringField",
+                "DATNOT": "TDateField",
+                "VALNOT": "TIBBCDField"
+            }
+        },
+        "Solicitacao": {
+            "component_name": "IBTSolicitacao",
+            "fields": {
+                "VENDEDOR": "TIBStringField",
+                "NUMERO": "TIBStringField",
+                "CLIENTE": "TIBStringField",
+                "NOMCLI": "TIBStringField",
+                "DATSOL": "TDateField",
+                "SITU": "TIBStringField"
+            }
+        },
+        "Pedido": {
+            "component_name": "IBTPedido",
+            "fields": {
+                "IDPED": "TIntegerField",
+                "PEDIDO": "TIBStringField",
+                "CODVEN": "TIBStringField",
+                "CODCLI": "TIBStringField",
+                "NOMCLI": "TIBStringField",
+                "BASE": "TDateField",
+                "RECOL": "TDateField",
+                "COBRAN": "TDateField",
+                "TOTPED": "TIBBCDField",
+                "SITU": "TIBStringField",
+                "DATPED": "TIBStringField",
+                "SOLICIT": "TIBStringField",
+                "RETORNO": "TIBStringField",
+                "TOTVEN": "TIBBCDField",
+                "DATPAG": "TIBStringField",
+                "VALPAG": "TIBBCDField",
+                "RESIDUO": "TIBBCDField",
+                "COB": "TIBStringField",
+                "LIMITE": "TIBStringField",
+                "VIA": "TIBStringField",
+                "OLDPED": "TIBStringField"
+            }
+        },
+        "Etiqueta": {
+            "component_name": "IBTEtiqueta",
+            "fields": {
+                "IDETIQ": "TIntegerField",
+                "CODCLI": "TIBStringField",
+                "NOMCLI": "TIBStringField",
+                "SOBNOM": "TIBStringField",
+                "BAIRRO": "TIBStringField",
+                "CODVEN": "TIBStringField",
+                "NOMVEN": "TIBStringField"
+            }
+        },
+        "Livro": {
+            "component_name": "IBTLivro",
+            "fields": {}
+        },
+        "Fornec": {
+            "component_name": "IBTFornec",
+            "fields": {
+                "MARCA": "TIBStringField",
+                "RAZAO": "TIBStringField",
+                "PESSO": "TIBStringField",
+                "NCPF": "TIBStringField",
+                "CNPJ": "TIBStringField",
+                "INSC": "TIBStringField",
+                "ENDE": "TIBStringField",
+                "BAIR": "TIBStringField",
+                "CIDA": "TIBStringField",
+                "ESTA": "TIBStringField",
+                "NCEP": "TIBStringField",
+                "NTEL": "TIBStringField",
+                "RESP": "TIBStringField",
+                "RTEL": "TIBStringField",
+                "SITU": "TIBStringField"
+            }
+        },
+        "Perdido": {
+            "component_name": "IBTPerdido",
+            "fields": {
+                "PEDIDO": "TIBStringField",
+                "CODVEN": "TIBStringField",
+                "CODCLI": "TIBStringField",
+                "NOMCLI": "TIBStringField",
+                "BASE": "TDateField",
+                "RECOL": "TDateField",
+                "COBRAN": "TDateField",
+                "TOTPED": "TIBBCDField",
+                "SITU": "TIBStringField",
+                "DATPED": "TIBStringField",
+                "SOLICIT": "TIBStringField",
+                "RETORNO": "TIBStringField",
+                "TOTVEN": "TIBBCDField",
+                "DATPAG": "TIBStringField",
+                "VALPAG": "TIBBCDField",
+                "RESIDUO": "TIBBCDField",
+                "COB": "TIBStringField",
+                "LIMITE": "TIBStringField",
+                "VIA": "TIBStringField",
+                "OLDPED": "TIBStringField"
+            }
+        },
+        "Grupo": {
+            "component_name": "IBTGrupo",
+            "fields": {
+                "CODIGO": "TIBStringField",
+                "DESCRICAO": "TIBStringField"
+            }
+        },
+        "Unidade": {
+            "component_name": "IBTUnidade",
+            "fields": {
+                "CODIGO": "TIBStringField",
+                "DESCRICAO": "TIBStringField"
+            }
+        },
+        "Itemcomp": {
+            "component_name": "IBTItemcomp",
+            "fields": {
+                "TIPPED": "TIBStringField",
+                "NUMPED": "TIBStringField",
+                "ITEM": "TIBStringField",
+                "CODART": "TIBStringField",
+                "DESCRICAO": "TIBStringField",
+                "QUANT": "TIntegerField",
+                "PRECOM": "TIBBCDField",
+                "DESCON": "TIBBCDField",
+                "VALART": "TIBBCDField",
+                "TAMANHO": "TIBStringField",
+                "COR": "TIBStringField"
+            }
+        },
+        "Itemped": {
+            "component_name": "IBTItemped",
+            "fields": {
+                "PEDIDO": "TIBStringField",
+                "CODART": "TIBStringField",
+                "DESCRICAO": "TIBStringField",
+                "QTDSAI": "TIntegerField",
+                "QTDRET": "TIntegerField",
+                "PRECUS": "TIBBCDField",
+                "PREVEN": "TIBBCDField"
+            }
+        },
+        "Itemdev": {
+            "component_name": "IBTItemdev",
+            "fields": {
+                "NUMNOT": "TIBStringField",
+                "CODART": "TIBStringField",
+                "DESCRICAO": "TIBStringField",
+                "QUANT": "TIntegerField",
+                "PRECUS": "TIBBCDField"
+            }
+        },
+        "Rota": {
+            "component_name": "IBTRota",
+            "fields": {
+                "ROTA": "TIBStringField",
+                "BAIR": "TIBStringField",
+                "NOME": "TIBStringField"
+            }
+        },
+        "Itemdef": {
+            "component_name": "IBTItemdef",
+            "fields": {
+                "NUMNOT": "TIBStringField",
+                "CODART": "TIBStringField",
+                "DESCRICAO": "TIBStringField",
+                "QUANT": "TIntegerField",
+                "PRECUS": "TIBBCDField"
+            }
+        },
+        "Itsolicit": {
+            "component_name": "IBTItsolicit",
+            "fields": {}
+        },
+        "Estoque": {
+            "component_name": "IBTEstoque",
+            "fields": {
+                "CODIGO": "TIBStringField",
+                "DESCRICAO": "TIBStringField",
+                "ESTOQ": "TIntegerField",
+                "DATB1": "TDateField",
+                "DATB2": "TDateField",
+                "CUSTO": "TIBBCDField"
+            }
+        },
+        "Resido": {
+            "component_name": "IBTResido",
+            "fields": {
+                "DATMOV": "TDateField",
+                "ITEM": "TIBStringField",
+                "NUMDOC": "TIBStringField",
+                "VALPAG": "TIBBCDField"
+            }
+        },
+        "Contas": {
+            "component_name": "IBTContas",
+            "fields": {
+                "DATEMIS": "TDateField",
+                "TIPDOC": "TIBStringField",
+                "NUMDOC": "TIBStringField",
+                "PARCEL": "TIBStringField",
+                "HISTOR": "TIBStringField",
+                "OBSERV": "TIBStringField",
+                "VALOR": "TIBBCDField",
+                "TIPCOB": "TIBStringField",
+                "NUMCOB": "TIBStringField",
+                "ORICOB": "TIBStringField",
+                "DATVENC": "TDateField",
+                "SINAL": "TIBStringField",
+                "SIGLA": "TIBStringField",
+                "SITU": "TIBStringField",
+                "DATPAG": "TIBStringField",
+                "VENDE": "TIBStringField",
+                "ACOMIS": "TIBBCDField",
+                "COMISS": "TIBBCDField",
+                "DATBAX": "TIBStringField",
+                "OPEROU": "TIBStringField",
+                "NUMCLI": "TIBStringField"
+            }
+        },
+        "Itemper": {
+            "component_name": "IBTItemper",
+            "fields": {
+                "PEDIDO": "TIBStringField",
+                "CODART": "TIBStringField",
+                "DESCRICAO": "TIBStringField",
+                "QTDSAI": "TIntegerField",
+                "QTDRET": "TIntegerField",
+                "PRECUS": "TIBBCDField",
+                "PREVEN": "TIBBCDField"
+            }
+        },
+        "Contag": {
+            "component_name": "IBTContag",
+            "fields": {}
+        }
+    },
+    "sql_statements_by_file": {
+        "UAjuscontg.pas": [
+            "Update CONTAGEM",
+            "Insert Into CONTAGEM",
+            "Insert Into CONTAGEM",
+            "Update CONTAGEM"
+        ],
+        "UAjustcomp.pas": [
+            "Update AUXITCOM",
+            "Update AUXITCOM",
+            "Insert Into AUXITCOM",
+            "Insert Into AUXITCOM",
+            "Update ARTIGO",
+            "Insert Into AUXCONTA",
+            "Update ITEMCOMPRA",
+            "Insert Into ITEMCOMPRA",
+            "Update COMPRA",
+            "Insert Into COMPRA",
+            "Insert Into CONTAS"
+        ],
+        "UArtigo.pas": [
+            "Insert Into ARTIGO",
+            "Update ARTIGO"
+        ],
+        "UAtiva.pas": [
+            "Update CLIENTE"
+        ],
+        "UBaixaresi.pas": [
+            "Update PEDIDO",
+            "Insert Into RESIDOS",
+            "Insert Into AUXITENS"
+        ],
+        "UCliente.pas": [
+            "Insert Into CLIENTE",
+            "Update CLIENTE"
+        ],
+        "UCompras.pas": [
+            "Update AUXITCOM",
+            "Update AUXITCOM",
+            "Insert Into AUXITCOM",
+            "Insert Into AUXITCOM",
+            "Update ARTIGO",
+            "Insert Into AUXCONTA",
+            "Update ITEMCOMPRA",
+            "Insert Into ITEMCOMPRA",
+            "Update COMPRA",
+            "Insert Into COMPRA",
+            "Insert Into CONTAS"
+        ]
+    }
+}

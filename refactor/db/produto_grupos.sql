@@ -1,4 +1,0 @@
-CREATE TABLE `produto_grupos` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `descricao` VARCHAR(100) NOT NULL
-) ENGINE=InnoDB;;
