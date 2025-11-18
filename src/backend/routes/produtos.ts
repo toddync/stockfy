@@ -6,26 +6,26 @@ const router = Router();
 
 // Add these interfaces
 interface ProdutoRawRow extends RowDataPacket {
-  id: number;
-  codigo: string;
-  descricao: string;
-  grupo_id: number;
-  preco_custo: number;
-  preco_venda: number;
-  estoque_atual: number;
-  tabela_preco: string;
-  preco_minimo: number;
-  data_atualizacao: string;
-  tags_string: string | null;
+    id: number;
+    codigo: string;
+    descricao: string;
+    grupo_id: number;
+    preco_custo: number;
+    preco_venda: number;
+    estoque_atual: number;
+    tabela_preco: string;
+    preco_minimo: number;
+    data_atualizacao: string;
+    tags_string: string | null;
 }
 
 interface BackendVariation {
-  id: number;
-  sku: string;
-  tamanho: string;
-  cor: string;
-  estoque_atual: number;
-  produto_id?: number;
+    id: number;
+    sku: string;
+    tamanho: string;
+    cor: string;
+    estoque_atual: number;
+    produto_id?: number;
 }
 
 // This will be moved to a service
@@ -36,6 +36,10 @@ const getPool = async () => {
 
 router.get('/', async (req, res) => {
     const filters = req.query;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 1000;
+    const offset = (page - 1) * limit;
+
     let query = `
         SELECT 
             p.*,
@@ -62,20 +66,60 @@ router.get('/', async (req, res) => {
         query += ')'
     }
 
+    // Add search filter if present
+    if (filters.q) {
+        query += ' AND (p.descricao LIKE ? OR p.codigo LIKE ?)';
+        params.push(`%${filters.q}%`, `%${filters.q}%`);
+    }
+
+    // Add pagination
+    query += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+
     try {
         const pool = await getPool();
+
+        // Get total count for pagination
+        let countQuery = `SELECT COUNT(*) as total FROM produtos p WHERE 1=1`;
+        const countParams: (string | number)[] = [];
+
+        if (filters.tamanho || filters.cor) {
+            countQuery += ' AND p.id IN (SELECT produto_id FROM produto_variacoes WHERE 1=1';
+            if (filters.tamanho) {
+                countQuery += ' AND tamanho = ?';
+                countParams.push(filters.tamanho as string);
+            }
+            if (filters.cor) {
+                countQuery += ' AND cor LIKE ?';
+                countParams.push(`%${filters.cor as string}%`);
+            }
+            countQuery += ')'
+        }
+        if (filters.q) {
+            countQuery += ' AND (p.descricao LIKE ? OR p.codigo LIKE ?)';
+            countParams.push(`%${filters.q}%`, `%${filters.q}%`);
+        }
+
+        const [countResult] = await pool.execute<RowDataPacket[]>(countQuery, countParams);
+        const total = countResult[0].total;
+
         const [rows] = await pool.execute(query, params);
-        
+
         const processedRows = (rows as ProdutoRawRow[]).map(row => {
             const { tags_string, ...rest } = row;
-            const tags = tags_string ? tags_string.split(';').map((t:string) => {
+            const tags = tags_string ? tags_string.split(';').map((t: string) => {
                 const parts = t.split(':');
                 return { id: parseInt(parts[0]), nome: parts.slice(1).join(':') };
             }) : [];
             return { ...rest, tags };
         });
 
-        res.status(200).json(processedRows);
+        res.status(200).json({
+            data: processedRows,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit)
+        });
     } catch (error) {
         console.error('Error fetching filtered produtos:', error);
         res.status(500).json({ message: 'Error fetching filtered produtos.' });

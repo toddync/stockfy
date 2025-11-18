@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Modal from '../components/Modal';
-import Alerta from '../components/Alerta';
 import FiltroRoupasAvancado, { type FilterState } from '../components/FiltroRoupasAvancado';
 import GradeTamanhosCores from '../components/GradeTamanhosCores';
 import ComparadorProdutos from '../components/ComparadorProdutos';
 import ClassificadorABC from '../components/ClassificadorABC';
 import EditorEmMassa from '../components/EditorEmMassa';
-
+import PageLayout from '../components/PageLayout';
+import { useSeniorMode } from '../contexts/SeniorModeContext';
 
 interface Tag {
   id: number;
@@ -20,7 +20,6 @@ interface Variation {
   cor: string;
   estoque_atual: number;
 }
-
 
 interface Produto {
   id?: number;
@@ -53,16 +52,27 @@ const Produtos: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [filters, setFilters] = useState({});
   const [selectedProductIdForGrade, setSelectedProductIdForGrade] = useState<number | null>(null);
-  
+
   const [showAdvancedTools, setShowAdvancedTools] = useState(false);
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  const { isSeniorMode } = useSeniorMode();
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
+  const [totalItems, setTotalItems] = useState(0);
 
   const carregarDados = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const queryParams = new URLSearchParams(filters as Record<string, string>).toString();
-      const produtosUrl = `http://localhost:3000/api/produtos${queryParams ? `?${queryParams}` : ''}`;
+      const queryParams = new URLSearchParams({
+        ...filters as Record<string, string>,
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString()
+      }).toString();
+
+      const produtosUrl = `http://localhost:3000/api/produtos?${queryParams}`;
 
       const [produtosResponse, gruposResponse] = await Promise.all([
         fetch(produtosUrl),
@@ -76,10 +86,14 @@ const Produtos: React.FC = () => {
         throw new Error(`HTTP error! status: ${gruposResponse.status} for produto_grupos`);
       }
 
-      const produtosData: any[] = await produtosResponse.json();
+      const produtosData = await produtosResponse.json();
       const gruposData: ProdutoGrupo[] = await gruposResponse.json();
 
-      const processedProdutos = produtosData.map(p => ({
+      // Handle both paginated and non-paginated responses for backward compatibility
+      const items = Array.isArray(produtosData) ? produtosData : produtosData.data || [];
+      const total = Array.isArray(produtosData) ? produtosData.length : produtosData.total || 0;
+
+      const processedProdutos = items.map((p: any) => ({
         ...p,
         preco_venda: p.preco_venda ? parseFloat(p.preco_venda) : 0,
         preco_custo: p.preco_custo ? parseFloat(p.preco_custo) : undefined,
@@ -88,6 +102,7 @@ const Produtos: React.FC = () => {
       }));
 
       setProdutos(processedProdutos);
+      setTotalItems(total);
       setGrupos(gruposData);
     } catch (e: unknown) {
       let message = "Erro desconhecido";
@@ -99,7 +114,7 @@ const Produtos: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, currentPage, itemsPerPage]);
 
   useEffect(() => {
     carregarDados();
@@ -107,6 +122,7 @@ const Produtos: React.FC = () => {
 
   const handleFilterChange = useCallback((newFilters: FilterState) => {
     setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page on filter change
   }, []);
 
   const salvarProduto = async (produto: Produto) => {
@@ -117,17 +133,13 @@ const Produtos: React.FC = () => {
       if (produto.id) {
         response = await fetch(`http://localhost:3000/api/produtos/${produto.id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(produto),
         });
       } else {
         response = await fetch('http://localhost:3000/api/produtos', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(produto),
         });
       }
@@ -183,72 +195,73 @@ const Produtos: React.FC = () => {
     }
   }
 
-  if (loading) {
-    return <div className="text-center p-6">Carregando produtos...</div>;
-  }
-
   if (selectedProductIdForGrade) {
     return (
-      <div className="page-container p-6 bg-white shadow-md rounded-lg">
-        <button 
+      <PageLayout title="Grade de Tamanhos e Cores">
+        <button
           onClick={() => setSelectedProductIdForGrade(null)}
           className="mb-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
         >
           ← Voltar para Produtos
         </button>
         <GradeTamanhosCores productId={selectedProductIdForGrade} />
-      </div>
+      </PageLayout>
     );
   }
 
+  const actions = (
+    <div className="flex gap-4">
+      <button
+        onClick={() => { setProdutoEditando(null); setMostrarForm(true); setActiveTool(null); }}
+        className={`${isSeniorMode ? 'bg-blue-600 hover:bg-blue-700 py-3 px-6 text-xl' : 'bg-blue-500 hover:bg-blue-600 py-2 px-4'} text-white font-bold rounded-md transition-colors`}
+      >
+        {isSeniorMode ? '+ Adicionar Novo Produto' : '+ Novo Produto'}
+      </button>
+      {!isSeniorMode && (
+        <button
+          onClick={() => setShowAdvancedTools(!showAdvancedTools)}
+          className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-md transition-colors"
+        >
+          {showAdvancedTools ? 'Ocultar Ferramentas' : 'Ferramentas Avançadas'}
+        </button>
+      )}
+    </div>
+  );
+
   return (
-    <div className="page-container p-6 bg-white shadow-md rounded-lg">
-      
-      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
-      {error && <Alerta message={error} onClose={() => setError(null)} />}
-
-      <div className="page-header flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Produtos</h1>
-        <div className="flex space-x-4">
-          <button 
-            onClick={() => { setProdutoEditando(null); setMostrarForm(true); setActiveTool(null); }}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-          >
-            + Novo Produto
-          </button>
-          <button 
-            onClick={() => setShowAdvancedTools(!showAdvancedTools)}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-md transition-colors"
-          >
-            {showAdvancedTools ? 'Ocultar Ferramentas' : 'Ferramentas Avançadas'}
-          </button>
-        </div>
-      </div>
-
-      {showAdvancedTools && (
+    <PageLayout
+      title="Gerenciar Produtos"
+      actions={actions}
+      isLoading={loading}
+      error={error}
+      success={success}
+      onErrorClose={() => setError(null)}
+      onSuccessClose={() => setSuccess(null)}
+    >
+      {showAdvancedTools && !isSeniorMode && (
         <div className="advanced-tools bg-gray-50 p-4 rounded-lg mb-6 border">
           <h3 className="text-lg font-semibold mb-4">Ferramentas Avançadas</h3>
           <div className="flex space-x-4 mb-4">
-            <button 
+            <button
               onClick={() => handleToolToggle('mass_editor')}
               className={`font-bold py-2 px-4 rounded-md transition-colors ${activeTool === 'mass_editor' ? 'bg-orange-500 text-white' : 'bg-orange-200 hover:bg-orange-300 text-orange-800'}`}
             >
               Editor em Massa
             </button>
-            <button 
+            <button
               onClick={() => handleToolToggle('abc_analysis')}
               className={`font-bold py-2 px-4 rounded-md transition-colors ${activeTool === 'abc_analysis' ? 'bg-green-500 text-white' : 'bg-green-200 hover:bg-green-300 text-green-800'}`}
             >
               Análise ABC
             </button>
-            <button 
+            <button
               onClick={() => handleToolToggle('product_comparator')}
               className={`font-bold py-2 px-4 rounded-md transition-colors ${activeTool === 'product_comparator' ? 'bg-purple-500 text-white' : 'bg-purple-200 hover:bg-purple-300 text-purple-800'}`}
             >
               Comparar Produtos
             </button>
           </div>
-          
+
           {activeTool === 'mass_editor' && <EditorEmMassa />}
           {activeTool === 'abc_analysis' && <ClassificadorABC />}
           {activeTool === 'product_comparator' && <ComparadorProdutos />}
@@ -258,73 +271,96 @@ const Produtos: React.FC = () => {
         </div>
       )}
 
-      <>
-        <Modal isOpen={mostrarForm} onClose={() => { setMostrarForm(false); setProdutoEditando(null); }}>
-          <ProdutoForm
-            produto={produtoEditando}
-            grupos={grupos}
-            onSave={salvarProduto}
-            onCancel={() => { setMostrarForm(false); setProdutoEditando(null); }}
-          />
-        </Modal>
+      <Modal isOpen={mostrarForm} onClose={() => { setMostrarForm(false); setProdutoEditando(null); }} size="4xl">
+        <ProdutoForm
+          produto={produtoEditando}
+          grupos={grupos}
+          onSave={salvarProduto}
+          onCancel={() => { setMostrarForm(false); setProdutoEditando(null); }}
+        />
+      </Modal>
 
-        <div className="table-container overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-200">
-            <thead>
-              <tr className="bg-gray-100 border-b">
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Código</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Descrição</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Grupo</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Preço Venda</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Estoque</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {produtos.map(produto => (
-                <tr key={produto.id} className="border-b hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm text-gray-700">{produto.codigo}</td>
-                  <td className="py-3 px-4 text-sm text-gray-700">{produto.descricao}</td>
-                  <td className="py-3 px-4 text-sm text-gray-700">{grupos.find(g => g.id === produto.grupo_id)?.descricao || 'N/A'}</td>
-                  <td className="py-3 px-4 text-sm text-gray-700">{produto.preco_venda?.toFixed(2)}</td>
-                  <td className="py-3 px-4 text-sm text-gray-700">{produto.estoque_atual != null ? produto.estoque_atual.toFixed(0) : 'N/A'}</td>
-                  <td className="py-3 px-4 text-sm">
-                    <button 
+      <div className="table-container overflow-x-auto">
+        <table className={`min-w-full bg-white border border-gray-200 ${isSeniorMode ? 'text-lg' : 'text-sm'}`}>
+          <thead>
+            <tr className="bg-gray-100 border-b">
+              <th className="py-3 px-4 text-left font-semibold text-gray-600">Código</th>
+              <th className="py-3 px-4 text-left font-semibold text-gray-600">Descrição</th>
+              <th className="py-3 px-4 text-left font-semibold text-gray-600">Grupo</th>
+              <th className="py-3 px-4 text-left font-semibold text-gray-600">Preço Venda</th>
+              <th className="py-3 px-4 text-left font-semibold text-gray-600">Estoque</th>
+              <th className="py-3 px-4 text-left font-semibold text-gray-600">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {produtos.map(produto => (
+              <tr key={produto.id} className="border-b hover:bg-gray-50">
+                <td className="py-3 px-4 text-gray-700">{produto.codigo}</td>
+                <td className="py-3 px-4 text-gray-700">{produto.descricao}</td>
+                <td className="py-3 px-4 text-gray-700">{grupos.find(g => g.id === produto.grupo_id)?.descricao || 'N/A'}</td>
+                <td className="py-3 px-4 text-gray-700">{produto.preco_venda?.toFixed(2)}</td>
+                <td className="py-3 px-4 text-gray-700">{produto.estoque_atual != null ? produto.estoque_atual.toFixed(0) : 'N/A'}</td>
+                <td className="py-3 px-4">
+                  {!isSeniorMode && (
+                    <button
                       onClick={() => { setSelectedProductIdForGrade(produto.id!); }}
                       className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-1 px-3 rounded-md mr-2 transition-colors"
                     >
                       Grade
                     </button>
-                    <button 
-                      onClick={() => { setProdutoEditando(produto); setMostrarForm(true); }}
-                      className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 rounded-md mr-2 transition-colors"
-                    >
-                      Editar
-                    </button>
-                    <button 
-                      onClick={() => deletarProduto(produto.id!)}
-                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-md transition-colors"
-                    >
-                      Excluir
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </>
-    </div>
+                  )}
+                  <button
+                    onClick={() => { setProdutoEditando(produto); setMostrarForm(true); }}
+                    className={`${isSeniorMode ? 'py-2 px-4 text-lg' : 'py-1 px-3'} bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-md mr-2 transition-colors`}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => deletarProduto(produto.id!)}
+                    className={`${isSeniorMode ? 'py-2 px-4 text-lg' : 'py-1 px-3'} bg-red-500 hover:bg-red-600 text-white font-bold rounded-md transition-colors`}
+                  >
+                    Excluir
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-center mt-6 gap-2">
+        <button
+          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className={`px-4 py-2 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-400' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+        >
+          Anterior
+        </button>
+        <span className="px-4 py-2 text-gray-700">
+          Página {currentPage}
+        </span>
+        <button
+          onClick={() => setCurrentPage(prev => prev + 1)}
+          disabled={produtos.length < itemsPerPage || (currentPage * itemsPerPage >= totalItems)}
+          className={`px-4 py-2 rounded ${produtos.length < itemsPerPage || (currentPage * itemsPerPage >= totalItems) ? 'bg-gray-200 text-gray-400' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+        >
+          Próxima
+        </button>
+      </div>
+    </PageLayout>
   );
 };
 
 export default Produtos;
+
 const ProdutoForm: React.FC<{
   produto: Produto | null;
   grupos: ProdutoGrupo[];
   onSave: (produto: Produto) => void;
   onCancel: () => void;
 }> = ({ produto, grupos, onSave, onCancel }) => {
+  const { isSeniorMode } = useSeniorMode();
   const [formData, setFormData] = useState<Produto>(
     produto || {
       codigo: '',
@@ -357,17 +393,14 @@ const ProdutoForm: React.FC<{
   };
 
   return (
-    <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl p-10">
-      <h2 className="text-4xl font-bold text-gray-800 text-center mb-4">
+    <div className={`w-full bg-white shadow-2xl rounded-2xl ${isSeniorMode ? 'p-8' : 'p-10'}`}>
+      <h2 className={`${isSeniorMode ? 'text-5xl mb-8' : 'text-4xl mb-4'} font-bold text-gray-800 text-center`}>
         {produto ? 'Editar' : 'Novo'} Produto
       </h2>
-      <p className="text-center text-gray-600 mb-8 text-lg">
-        Preencha os dados para {produto ? 'atualizar o' : 'cadastrar um novo'} produto.
-      </p>
       <form onSubmit={handleSubmit} className="space-y-8">
         <div>
-          <label className="block text-xl font-semibold text-gray-700 mb-2">
-            1. Informações Básicas
+          <label className={`block font-semibold text-gray-700 mb-2 ${isSeniorMode ? 'text-2xl' : 'text-xl'}`}>
+            Informações Básicas
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
@@ -376,7 +409,7 @@ const ProdutoForm: React.FC<{
               value={formData.codigo}
               onChange={e => setFormData({ ...formData, codigo: e.target.value })}
               required
-              className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isSeniorMode ? 'py-4 px-6 text-2xl' : 'py-3 px-4 text-lg'}`}
             />
             <input
               type="text"
@@ -384,13 +417,13 @@ const ProdutoForm: React.FC<{
               value={formData.descricao}
               onChange={e => setFormData({ ...formData, descricao: e.target.value })}
               required
-              className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isSeniorMode ? 'py-4 px-6 text-2xl' : 'py-3 px-4 text-lg'}`}
             />
             <select
               value={formData.grupo_id}
               onChange={e => setFormData({ ...formData, grupo_id: parseInt(e.target.value) })}
               required
-              className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isSeniorMode ? 'py-4 px-6 text-2xl' : 'py-3 px-4 text-lg'}`}
             >
               <option value="">Selecione um Grupo</option>
               {grupos.map(grupo => (
@@ -403,18 +436,20 @@ const ProdutoForm: React.FC<{
         </div>
 
         <div>
-          <label className="block text-xl font-semibold text-gray-700 mb-2">
-            2. Preços
+          <label className={`block font-semibold text-gray-700 mb-2 ${isSeniorMode ? 'text-2xl' : 'text-xl'}`}>
+            Preços
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="number"
-              placeholder="Preço Custo"
-              value={formData.preco_custo || ''}
-              onChange={e => setFormData({ ...formData, preco_custo: parseFloat(e.target.value) })}
-              step="0.01"
-              className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+            {!isSeniorMode && (
+              <input
+                type="number"
+                placeholder="Preço Custo"
+                value={formData.preco_custo || ''}
+                onChange={e => setFormData({ ...formData, preco_custo: parseFloat(e.target.value) })}
+                step="0.01"
+                className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            )}
             <input
               type="number"
               placeholder="Preço Venda"
@@ -422,7 +457,7 @@ const ProdutoForm: React.FC<{
               onChange={e => setFormData({ ...formData, preco_venda: parseFloat(e.target.value) })}
               step="0.01"
               required
-              className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isSeniorMode ? 'py-4 px-6 text-2xl' : 'py-3 px-4 text-lg'}`}
             />
           </div>
         </div>
@@ -431,15 +466,15 @@ const ProdutoForm: React.FC<{
           <button
             type="button"
             onClick={onCancel}
-            className="w-1/3 bg-gray-500 hover:bg-gray-600 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            className={`w-1/3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300 ${isSeniorMode ? 'py-6 px-10 text-2xl' : 'py-4 px-8 text-xl'}`}
           >
             Cancelar
           </button>
           <button
             type="submit"
-            className="w-1/3 bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            className={`w-1/3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300 ${isSeniorMode ? 'py-6 px-10 text-2xl' : 'py-4 px-8 text-xl'}`}
           >
-            Salvar
+            {isSeniorMode ? 'Salvar Produto' : 'Salvar'}
           </button>
         </div>
       </form>

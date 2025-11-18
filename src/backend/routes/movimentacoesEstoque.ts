@@ -57,14 +57,23 @@ router.post('/ajuste', async (req, res) => {
 });
 
 
-// GET all
-router.get('/', async (_req, res) => {
+// Get all movements
+router.get('/', async (req, res) => {
     try {
-        const data = await crudService.getAll(TABLE_NAME);
-        res.status(200).json(data);
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 1000;
+        const sortField = (req.query.sortField as string) || 'data_documento'; // Default sort by date
+        const sortOrder = (req.query.sortOrder as string) === 'asc' ? 'asc' : 'desc'; // Default desc
+
+        if (req.query.limit || req.query.page) {
+            const result = await crudService.getPaginated(TABLE_NAME, page, limit, sortField, sortOrder);
+            res.json(result);
+        } else {
+            const movimentacoes = await crudService.getAll(TABLE_NAME);
+            res.json(movimentacoes);
+        }
     } catch (error) {
-        console.error(`Error fetching all from ${TABLE_NAME}:`, error);
-        res.status(500).json({ message: `Error fetching data from ${TABLE_NAME}.` });
+        res.status(500).json({ error: 'Failed to fetch stock movements' });
     }
 });
 
