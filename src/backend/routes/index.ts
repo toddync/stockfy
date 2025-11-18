@@ -18,6 +18,7 @@ import etiquetasRouter from './etiquetas.js';
 import usuariosRouter from './usuarios.js';
 import permissoesRouter from './permissoes.js';
 import usuarioPermissoesRouter from './usuarioPermissoes.js';
+import sistemaAlertasRouter from './sistemaAlertas.js';
 
 
 const router = Router();
@@ -41,6 +42,7 @@ router.use('/etiquetas', etiquetasRouter);
 router.use('/usuarios', usuariosRouter);
 router.use('/permissoes', permissoesRouter);
 router.use('/usuario-permissoes', usuarioPermissoesRouter);
+router.use('/sistema-alertas', sistemaAlertasRouter);
 
 
 export default router;

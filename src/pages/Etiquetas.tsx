@@ -1,18 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import Modal from '../components/Modal';
 
-interface Etiqueta {
-  id?: number; // ID is optional for new entries
-  cliente_id: number;
-  codigo_vendedor?: string;
-  nome_vendedor?: string;
-  sobrenome?: string;
-}
-
-interface Cliente {
-  id: number;
-  nome: string;
-}
 
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
@@ -220,16 +206,20 @@ const Etiquetas: React.FC = () => {
   );
 };
 
-// Componente de formulário reutilizável
-const EtiquetaForm: React.FC<{ 
-  etiqueta: Etiqueta | null; 
+const EtiquetaForm: React.FC<{
+  etiqueta: Etiqueta | null;
   clientes: Cliente[];
-  onSave: (etiqueta: Etiqueta) => void; 
-  onCancel: () => void 
+  onSave: (etiqueta: Etiqueta) => void;
+  onCancel: () => void;
 }> = ({ etiqueta, clientes, onSave, onCancel }) => {
-  const [formData, setFormData] = useState<Etiqueta>(etiqueta || {
-    cliente_id: 0, codigo_vendedor: '', nome_vendedor: '', sobrenome: ''
-  });
+  const [formData, setFormData] = useState<Etiqueta>(
+    etiqueta || {
+      cliente_id: 0,
+      codigo_vendedor: '',
+      nome_vendedor: '',
+      sobrenome: '',
+    }
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,77 +227,87 @@ const EtiquetaForm: React.FC<{
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form-container bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{etiqueta ? 'Editar' : 'Nova'} Etiqueta</h2>
-      
-      <div className="mb-4">
-        <label htmlFor="cliente_id" className="block text-gray-700 text-sm font-bold mb-2">Cliente:</label>
-        <select
-          id="cliente_id"
-          value={formData.cliente_id}
-          onChange={e => setFormData({...formData, cliente_id: parseInt(e.target.value)})}
-          required
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        >
-          <option value="">Selecione um Cliente</option>
-          {clientes.map(cliente => (
-            <option key={cliente.id} value={cliente.id}>{cliente.nome}</option>
-          ))}
-        </select>
-      </div>
+    <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl p-10">
+        <h2 className="text-4xl font-bold text-gray-800 text-center mb-4">
+            {etiqueta ? 'Editar' : 'Nova'} Etiqueta
+        </h2>
+        <p className="text-center text-gray-600 mb-8 text-lg">
+            Preencha os dados para {etiqueta ? 'atualizar a' : 'criar uma nova'} etiqueta.
+        </p>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div>
+            <label className="block text-xl font-semibold text-gray-700 mb-2">
+                1. Selecione o Cliente
+            </label>
+            <select
+                id="cliente_id"
+                value={formData.cliente_id}
+                onChange={e => setFormData({ ...formData, cliente_id: parseInt(e.target.value) })}
+                required
+                className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+                <option value="">Selecione um Cliente</option>
+                {clientes.map(cliente => (
+                <option key={cliente.id} value={cliente.id}>
+                    {cliente.nome}
+                </option>
+                ))}
+            </select>
+        </div>
 
-      <div className="mb-4">
-        <label htmlFor="codigo_vendedor" className="block text-gray-700 text-sm font-bold mb-2">Código Vendedor:</label>
-        <input
-          type="text"
-          id="codigo_vendedor"
-          placeholder="Código Vendedor"
-          value={formData.codigo_vendedor || ''}
-          onChange={e => setFormData({...formData, codigo_vendedor: e.target.value})}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
+        <div>
+            <label className="block text-xl font-semibold text-gray-700 mb-2">
+                2. Informações do Vendedor
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                    type="text"
+                    placeholder="Código do Vendedor"
+                    value={formData.codigo_vendedor || ''}
+                    onChange={e => setFormData({ ...formData, codigo_vendedor: e.target.value })}
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <input
+                    type="text"
+                    placeholder="Nome do Vendedor"
+                    value={formData.nome_vendedor || ''}
+                    onChange={e => setFormData({ ...formData, nome_vendedor: e.target.value })}
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+            </div>
+        </div>
 
-      <div className="mb-4">
-        <label htmlFor="nome_vendedor" className="block text-gray-700 text-sm font-bold mb-2">Nome Vendedor:</label>
-        <input
-          type="text"
-          id="nome_vendedor"
-          placeholder="Nome Vendedor"
-          value={formData.nome_vendedor || ''}
-          onChange={e => setFormData({...formData, nome_vendedor: e.target.value})}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
+        <div>
+            <label htmlFor="sobrenome" className="block text-xl font-semibold text-gray-700 mb-2">
+                3. Sobrenome
+            </label>
+            <input
+                type="text"
+                id="sobrenome"
+                placeholder="Sobrenome (opcional)"
+                value={formData.sobrenome || ''}
+                onChange={e => setFormData({ ...formData, sobrenome: e.target.value })}
+                className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+        </div>
 
-      <div className="mb-4">
-        <label htmlFor="sobrenome" className="block text-gray-700 text-sm font-bold mb-2">Sobrenome:</label>
-        <input
-          type="text"
-          id="sobrenome"
-          placeholder="Sobrenome"
-          value={formData.sobrenome || ''}
-          onChange={e => setFormData({...formData, sobrenome: e.target.value})}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
-      
-      <div className="form-actions flex justify-end gap-4">
-        <button 
-          type="submit"
-          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-        >
-          Salvar
-        </button>
-        <button 
-          type="button" 
-          onClick={onCancel}
-          className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-        >
-          Cancelar
-        </button>
-      </div>
-    </form>
+        <div className="form-actions flex justify-center gap-6 pt-4">
+            <button
+                type="button"
+                onClick={onCancel}
+                className="w-1/3 bg-gray-500 hover:bg-gray-600 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+                Cancelar
+            </button>
+            <button
+                type="submit"
+                className="w-1/3 bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+                Salvar
+            </button>
+        </div>
+      </form>
+    </div>
   );
 };
 

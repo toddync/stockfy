@@ -186,15 +186,19 @@ const Residuos: React.FC = () => {
   );
 };
 
-// Componente de formulário reutilizável
-const ResiduoForm: React.FC<{ 
-  residuo: Residuo | null; 
-  onSave: (residuo: Residuo) => void; 
-  onCancel: () => void 
+const ResiduoForm: React.FC<{
+  residuo: Residuo | null;
+  onSave: (residuo: Residuo) => void;
+  onCancel: () => void;
 }> = ({ residuo, onSave, onCancel }) => {
-  const [formData, setFormData] = useState<Residuo>(residuo || {
-    data_movimento: new Date().toISOString().split('T')[0], item: '', numero_documento: '', valor_pago: 0
-  });
+  const [formData, setFormData] = useState<Residuo>(
+    residuo || {
+      data_movimento: new Date().toISOString().split('T')[0],
+      item: '',
+      numero_documento: '',
+      valor_pago: 0,
+    }
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,74 +206,75 @@ const ResiduoForm: React.FC<{
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form-container bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{residuo ? 'Editar' : 'Novo'} Resíduo</h2>
-      
-      <div className="mb-4">
-        <label htmlFor="data_movimento" className="block text-gray-700 text-sm font-bold mb-2">Data Movimento:</label>
-        <input
-          type="date"
-          id="data_movimento"
-          value={formData.data_movimento}
-          onChange={e => setFormData({...formData, data_movimento: e.target.value})}
-          required
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
+    <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl p-10">
+        <h2 className="text-4xl font-bold text-gray-800 text-center mb-4">
+            {residuo ? 'Editar' : 'Novo'} Resíduo
+        </h2>
+        <p className="text-center text-gray-600 mb-8 text-lg">
+            Preencha os dados para {residuo ? 'atualizar o' : 'criar um novo'} resíduo.
+        </p>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div>
+            <label className="block text-xl font-semibold text-gray-700 mb-2">
+                1. Informações do Resíduo
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                    type="date"
+                    value={formData.data_movimento}
+                    onChange={e => setFormData({ ...formData, data_movimento: e.target.value })}
+                    required
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <input
+                    type="text"
+                    placeholder="Item"
+                    value={formData.item || ''}
+                    onChange={e => setFormData({ ...formData, item: e.target.value })}
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+            </div>
+        </div>
+        <div>
+            <label className="block text-xl font-semibold text-gray-700 mb-2">
+                2. Documento e Valor
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                    type="text"
+                    placeholder="Número do Documento"
+                    value={formData.numero_documento || ''}
+                    onChange={e => setFormData({ ...formData, numero_documento: e.target.value })}
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <input
+                    type="number"
+                    placeholder="Valor Pago"
+                    value={formData.valor_pago}
+                    onChange={e => setFormData({ ...formData, valor_pago: parseFloat(e.target.value) })}
+                    step="0.01"
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+            </div>
+        </div>
 
-      <div className="mb-4">
-        <label htmlFor="item" className="block text-gray-700 text-sm font-bold mb-2">Item:</label>
-        <input
-          type="text"
-          id="item"
-          placeholder="Item"
-          value={formData.item || ''}
-          onChange={e => setFormData({...formData, item: e.target.value})}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
-
-      <div className="mb-4">
-        <label htmlFor="numero_documento" className="block text-gray-700 text-sm font-bold mb-2">Número Documento:</label>
-        <input
-          type="text"
-          id="numero_documento"
-          placeholder="Número Documento"
-          value={formData.numero_documento || ''}
-          onChange={e => setFormData({...formData, numero_documento: e.target.value})}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
-
-      <div className="mb-4">
-        <label htmlFor="valor_pago" className="block text-gray-700 text-sm font-bold mb-2">Valor Pago:</label>
-        <input
-          type="number"
-          id="valor_pago"
-          placeholder="Valor Pago"
-          value={formData.valor_pago}
-          onChange={e => setFormData({...formData, valor_pago: parseFloat(e.target.value)})}
-          step="0.01"
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
-      
-      <div className="form-actions flex justify-end gap-4">
-        <button 
-          type="submit"
-          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-        >
-          Salvar
-        </button>
-        <button 
-          type="button" 
-          onClick={onCancel}
-          className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-        >
-          Cancelar
-        </button>
-      </div>
-    </form>
+        <div className="form-actions flex justify-center gap-6 pt-4">
+            <button
+                type="button"
+                onClick={onCancel}
+                className="w-1/3 bg-gray-500 hover:bg-gray-600 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+                Cancelar
+            </button>
+            <button
+                type="submit"
+                className="w-1/3 bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+                Salvar
+            </button>
+        </div>
+      </form>
+    </div>
   );
 };
 

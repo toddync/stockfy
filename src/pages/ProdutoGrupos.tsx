@@ -175,15 +175,17 @@ const ProdutoGrupos: React.FC = () => {
   );
 };
 
-// Componente de formulário reutilizável
-const ProdutoGrupoForm: React.FC<{ 
-  grupo: ProdutoGrupo | null; 
-  onSave: (grupo: ProdutoGrupo) => void; 
-  onCancel: () => void 
+const ProdutoGrupoForm: React.FC<{
+  grupo: ProdutoGrupo | null;
+  onSave: (grupo: ProdutoGrupo) => void;
+  onCancel: () => void;
 }> = ({ grupo, onSave, onCancel }) => {
-  const [formData, setFormData] = useState<ProdutoGrupo>(grupo || {
-    codigo: '', descricao: ''
-  });
+  const [formData, setFormData] = useState<ProdutoGrupo>(
+    grupo || {
+      codigo: '',
+      descricao: '',
+    }
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,51 +193,59 @@ const ProdutoGrupoForm: React.FC<{
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form-container bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{grupo ? 'Editar' : 'Novo'} Grupo de Produto</h2>
-      
-      <div className="mb-4">
-        <label htmlFor="codigo" className="block text-gray-700 text-sm font-bold mb-2">Código:</label>
-        <input
-          type="text"
-          id="codigo"
-          placeholder="Código"
-          value={formData.codigo}
-          onChange={e => setFormData({...formData, codigo: e.target.value})}
-          required
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
+    <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl p-10">
+        <h2 className="text-4xl font-bold text-gray-800 text-center mb-4">
+            {grupo ? 'Editar' : 'Novo'} Grupo de Produto
+        </h2>
+        <p className="text-center text-gray-600 mb-8 text-lg">
+            Preencha os dados para {grupo ? 'atualizar o' : 'criar um novo'} grupo de produto.
+        </p>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div>
+            <label className="block text-xl font-semibold text-gray-700 mb-2">
+                1. Código do Grupo
+            </label>
+            <input
+                type="text"
+                placeholder="Código"
+                value={formData.codigo}
+                onChange={e => setFormData({ ...formData, codigo: e.target.value })}
+                required
+                className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+        </div>
 
-      <div className="mb-4">
-        <label htmlFor="descricao" className="block text-gray-700 text-sm font-bold mb-2">Descrição:</label>
-        <input
-          type="text"
-          id="descricao"
-          placeholder="Descrição"
-          value={formData.descricao}
-          onChange={e => setFormData({...formData, descricao: e.target.value})}
-          required
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
-      
-      <div className="form-actions flex justify-end gap-4">
-        <button 
-          type="submit"
-          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-        >
-          Salvar
-        </button>
-        <button 
-          type="button" 
-          onClick={onCancel}
-          className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-        >
-          Cancelar
-        </button>
-      </div>
-    </form>
+        <div>
+            <label className="block text-xl font-semibold text-gray-700 mb-2">
+                2. Descrição do Grupo
+            </label>
+            <input
+                type="text"
+                placeholder="Descrição"
+                value={formData.descricao}
+                onChange={e => setFormData({ ...formData, descricao: e.target.value })}
+                required
+                className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+        </div>
+
+        <div className="form-actions flex justify-center gap-6 pt-4">
+            <button
+                type="button"
+                onClick={onCancel}
+                className="w-1/3 bg-gray-500 hover:bg-gray-600 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+                Cancelar
+            </button>
+            <button
+                type="submit"
+                className="w-1/3 bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+                Salvar
+            </button>
+        </div>
+      </form>
+    </div>
   );
 };
 

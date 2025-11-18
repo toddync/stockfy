@@ -8,11 +8,9 @@ interface ProductInfo {
   cor?: string;
 }
 
-interface PreviewEtiquetaProps {
-  // No direct props needed initially, as product selection will be internal
-}
 
-const PreviewEtiqueta: React.FC<PreviewEtiquetaProps> = () => {
+
+const PreviewEtiqueta: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<ProductInfo[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<ProductInfo | null>(null);

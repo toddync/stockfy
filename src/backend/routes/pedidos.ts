@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import CrudService from '../crudService.js';
 import Database from '../database.js';
-import { type Pool } from 'mysql2/promise';
+import type { Pool, RowDataPacket } from 'mysql2/promise';
 
 const router = Router();
 const crudService = new CrudService();
@@ -27,11 +27,11 @@ router.get('/ticket-medio-analysis', async (_req, res) => {
             FROM pedidos p
             WHERE p.data_pedido >= DATE_SUB(CURDATE(), INTERVAL ${interval})
         `;
-        const [d7]: any = await pool.execute(query('7 DAY'));
-        const [m1]: any = await pool.execute(query('1 MONTH'));
-        const [m3]: any = await pool.execute(query('3 MONTH'));
+        const [d7rows] = await pool.execute<RowDataPacket[]>(query('7 DAY'));
+        const [m1rows] = await pool.execute<RowDataPacket[]>(query('1 MONTH'));
+        const [m3rows] = await pool.execute<RowDataPacket[]>(query('3 MONTH'));
         
-        res.status(200).json([d7[0], m1[0], m3[0]]);
+        res.status(200).json([d7rows[0], m1rows[0], m3rows[0]]);
     } catch (error) {
         console.error('Error fetching ticket medio analysis:', error);
         res.status(500).json({ message: 'Error fetching ticket medio analysis.' });
@@ -43,7 +43,7 @@ router.get('/:id/detalhes', async (req, res) => {
     const { id } = req.params;
     try {
         const pool = await getPool();
-        const [pedidoRows]: any = await pool.execute(`
+        const [pedidoRows] = await pool.execute<RowDataPacket[]>(`
             SELECT p.*, c.nome as cliente_nome 
             FROM pedidos p 
             LEFT JOIN clientes c ON p.cliente_id = c.id 

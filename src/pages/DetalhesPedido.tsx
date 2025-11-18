@@ -39,7 +39,7 @@ const DetalhesPedido: React.FC = () => {
     }
   }, [pedidoId]);
 
-  const carregarPedido = async () => {
+  const carregarPedido = React.useCallback(async () => {
     setLoading(true);
     setError(null);
     // Do not reset success here so message can persist after reload
@@ -60,7 +60,7 @@ const DetalhesPedido: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pedidoId, setPedido, setError, setLoading]);
 
   const removerItem = async (itemId: number) => {
     if (!window.confirm('Confirmar exclusão do item?')) {

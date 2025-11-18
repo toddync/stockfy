@@ -8,11 +8,9 @@ interface TicketMedioData {
   totalVendas: number;
 }
 
-interface AnaliseTicketMedioProps {
-  // No direct props needed initially, as data will be fetched internally
-}
 
-const AnaliseTicketMedio: React.FC<AnaliseTicketMedioProps> = () => {
+
+const AnaliseTicketMedio: React.FC = () => {
   const [ticketMedioData, setTicketMedioData] = useState<TicketMedioData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

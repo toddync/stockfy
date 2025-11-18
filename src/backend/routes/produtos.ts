@@ -1,7 +1,32 @@
 import { Router } from 'express';
 import Database from '../database.js';
+import type { RowDataPacket, ResultSetHeader, FieldPacket } from 'mysql2/promise'; // Import RowDataPacket and ResultSetHeader
 
 const router = Router();
+
+// Add these interfaces
+interface ProdutoRawRow extends RowDataPacket {
+  id: number;
+  codigo: string;
+  descricao: string;
+  grupo_id: number;
+  preco_custo: number;
+  preco_venda: number;
+  estoque_atual: number;
+  tabela_preco: string;
+  preco_minimo: number;
+  data_atualizacao: string;
+  tags_string: string | null;
+}
+
+interface BackendVariation {
+  id: number;
+  sku: string;
+  tamanho: string;
+  cor: string;
+  estoque_atual: number;
+  produto_id?: number;
+}
 
 // This will be moved to a service
 const getPool = async () => {
@@ -22,17 +47,17 @@ router.get('/', async (req, res) => {
         FROM produtos p
         WHERE 1=1
     `;
-    const params: any[] = [];
+    const params: (string | number)[] = [];
 
     if (filters.tamanho || filters.cor) {
         query += ' AND p.id IN (SELECT produto_id FROM produto_variacoes WHERE 1=1';
         if (filters.tamanho) {
             query += ' AND tamanho = ?';
-            params.push(filters.tamanho);
+            params.push(filters.tamanho as string);
         }
         if (filters.cor) {
             query += ' AND cor LIKE ?';
-            params.push(`%${filters.cor}%`);
+            params.push(`%${filters.cor as string}%`);
         }
         query += ')'
     }
@@ -41,7 +66,7 @@ router.get('/', async (req, res) => {
         const pool = await getPool();
         const [rows] = await pool.execute(query, params);
         
-        const processedRows = (rows as any[]).map(row => {
+        const processedRows = (rows as ProdutoRawRow[]).map(row => {
             const { tags_string, ...rest } = row;
             const tags = tags_string ? tags_string.split(';').map((t:string) => {
                 const parts = t.split(':');
@@ -68,9 +93,8 @@ router.post('/', async (req, res) => {
         const [result] = await connection.execute(
             'INSERT INTO produtos (codigo, descricao, grupo_id, preco_custo, preco_venda, tabela_preco, preco_minimo) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [productData.codigo, productData.descricao, productData.grupo_id, productData.preco_custo, productData.preco_venda, productData.tabela_preco, productData.preco_minimo]
-        );
-        const productId = (result as any).insertId;
-
+        ) as [ResultSetHeader, FieldPacket[]]; // Explicitly cast result to ResultSetHeader
+        const productId = result.insertId;
         if (variations && variations.length > 0) {
             for (const v of variations) {
                 await connection.execute(
@@ -182,7 +206,7 @@ router.get('/:productId/variacoes', async (req, res) => {
 });
 
 router.put('/:productId/variacoes/bulk', async (req, res) => {
-    const updatedVariations = req.body as any[];
+    const updatedVariations = req.body as BackendVariation[];
     if (!Array.isArray(updatedVariations) || updatedVariations.length === 0) {
         return res.status(400).json({ message: 'Request body must be a non-empty array of variations.' });
     }

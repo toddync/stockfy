@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+export interface FilterState {
+  tamanho: string;
+  cor: string;
+  genero: string;
+  faixaEtaria: string;
+  material: string;
+  temporada: string;
+}
+
 interface FiltroRoupasAvancadoProps {
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: FilterState) => void;
 }
 
 const FiltroRoupasAvancado: React.FC<FiltroRoupasAvancadoProps> = ({ onFilterChange }) => {
@@ -24,7 +33,7 @@ const FiltroRoupasAvancado: React.FC<FiltroRoupasAvancadoProps> = ({ onFilterCha
       onFilterChange({ tamanho, cor, genero, faixaEtaria, material, temporada });
     }, 500);
     return () => clearTimeout(handler);
-  }, [tamanho, cor, genero, faixaEtaria, material, temporada]);
+  }, [tamanho, cor, genero, faixaEtaria, material, temporada, onFilterChange]);
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">

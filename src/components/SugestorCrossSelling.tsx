@@ -7,11 +7,9 @@ interface Produto {
   preco_venda: number;
 }
 
-interface SugestorCrossSellingProps {
-  // No direct props needed initially, as product selection will be internal
-}
 
-const SugestorCrossSelling: React.FC<SugestorCrossSellingProps> = () => {
+
+const SugestorCrossSelling: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<Produto[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Produto | null>(null);

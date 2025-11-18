@@ -17,11 +17,9 @@ interface ItemVenda {
   comissaoPercentual: number; // Commission percentage for this specific item
 }
 
-interface CalculadoraComissoesProps {
-  // No direct props needed initially, as data will be managed internally
-}
 
-const CalculadoraComissoes: React.FC<CalculadoraComissoesProps> = () => {
+
+const CalculadoraComissoes: React.FC = () => {
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [selectedVendedor, setSelectedVendedor] = useState<Vendedor | null>(null);
   const [produtos, setProdutos] = useState<Produto[]>([]);

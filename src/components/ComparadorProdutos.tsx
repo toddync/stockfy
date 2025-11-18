@@ -10,11 +10,9 @@ interface ProductComparison {
   // Add other relevant fields for comparison
 }
 
-interface ComparadorProdutosProps {
-  // No direct props needed initially, as products will be selected within the component
-}
 
-const ComparadorProdutos: React.FC<ComparadorProdutosProps> = () => {
+
+const ComparadorProdutos: React.FC = () => {
   const [availableProducts, setAvailableProducts] = useState<ProductComparison[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<ProductComparison[]>([]);
   const [searchTerm, setSearchTerm] = useState('');

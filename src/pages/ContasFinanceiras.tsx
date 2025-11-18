@@ -210,16 +210,23 @@ const ContasFinanceiras: React.FC = () => {
   );
 };
 
-const ContaFinanceiraForm: React.FC<{ 
-  conta: ContaFinanceira | null; 
+const ContaFinanceiraForm: React.FC<{
+  conta: ContaFinanceira | null;
   vendedores: Vendedor[];
   clientes: Cliente[];
-  onSave: (conta: ContaFinanceira) => void; 
-  onCancel: () => void 
-}> = ({ conta, vendedores: _vendedores, clientes, onSave, onCancel }) => {
-  const [formData, setFormData] = useState<ContaFinanceira>(conta || {
-    data_emissao: new Date().toISOString().split('T')[0], tipo_documento: '', numero_documento: '', valor: 0, data_vencimento: new Date().toISOString().split('T')[0], situacao: 'Pendente'
-  });
+  onSave: (conta: ContaFinanceira) => void;
+  onCancel: () => void;
+}> = ({ conta, clientes, onSave, onCancel }) => {
+  const [formData, setFormData] = useState<ContaFinanceira>(
+    conta || {
+      data_emissao: new Date().toISOString().split('T')[0],
+      tipo_documento: '',
+      numero_documento: '',
+      valor: 0,
+      data_vencimento: new Date().toISOString().split('T')[0],
+      situacao: 'Pendente',
+    }
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,48 +234,116 @@ const ContaFinanceiraForm: React.FC<{
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form-container bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{conta ? 'Editar' : 'Nova'} Conta Financeira</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Form fields go here */}
-        {/* Each field is wrapped in a div */}
-        <div className="mb-4">
-          <label htmlFor="data_emissao" className="block text-gray-700 text-sm font-bold mb-2">Data de Emissão:</label>
-          <input type="date" id="data_emissao" value={formData.data_emissao} onChange={e => setFormData({...formData, data_emissao: e.target.value})} required className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"/>
+    <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl p-10">
+        <h2 className="text-4xl font-bold text-gray-800 text-center mb-4">
+            {conta ? 'Editar' : 'Nova'} Conta Financeira
+        </h2>
+        <p className="text-center text-gray-600 mb-8 text-lg">
+            Preencha os dados para {conta ? 'atualizar a' : 'cadastrar uma nova'} conta.
+        </p>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div>
+            <label className="block text-xl font-semibold text-gray-700 mb-2">
+                1. Informações do Documento
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                    type="text"
+                    placeholder="Tipo de Documento (NF, Boleto...)"
+                    value={formData.tipo_documento}
+                    onChange={e => setFormData({ ...formData, tipo_documento: e.target.value })}
+                    required
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <input
+                    type="text"
+                    placeholder="Número do Documento"
+                    value={formData.numero_documento}
+                    onChange={e => setFormData({ ...formData, numero_documento: e.target.value })}
+                    required
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+            </div>
         </div>
-        <div className="mb-4">
-          <label htmlFor="tipo_documento" className="block text-gray-700 text-sm font-bold mb-2">Tipo de Documento:</label>
-          <input type="text" id="tipo_documento" placeholder="NF, Boleto, etc." value={formData.tipo_documento} onChange={e => setFormData({...formData, tipo_documento: e.target.value})} required className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"/>
+
+        <div>
+            <label className="block text-xl font-semibold text-gray-700 mb-2">
+                2. Datas e Valores
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input
+                    type="date"
+                    title='Data de emissão'
+                    value={formData.data_emissao}
+                    onChange={e => setFormData({ ...formData, data_emissao: e.target.value })}
+                    required
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <input
+                    type="date"
+                    title='Data de vencimento'
+                    value={formData.data_vencimento}
+                    onChange={e => setFormData({ ...formData, data_vencimento: e.target.value })}
+                    required
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <input
+                    type="number"
+                    placeholder="Valor"
+                    value={formData.valor}
+                    onChange={e => setFormData({ ...formData, valor: parseFloat(e.target.value) })}
+                    step="0.01"
+                    required
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+            </div>
         </div>
-        <div className="mb-4">
-          <label htmlFor="numero_documento" className="block text-gray-700 text-sm font-bold mb-2">Número do Documento:</label>
-          <input type="text" id="numero_documento" placeholder="Número do Documento" value={formData.numero_documento} onChange={e => setFormData({...formData, numero_documento: e.target.value})} required className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"/>
+        
+        <div>
+            <label className="block text-xl font-semibold text-gray-700 mb-2">
+                3. Cliente e Observações
+            </label>
+            <div className="grid grid-cols-1 gap-4">
+                <select
+                    id="cliente_id"
+                    value={formData.cliente_id}
+                    onChange={e => setFormData({ ...formData, cliente_id: parseInt(e.target.value) })}
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                    <option value="0">Selecione um Cliente</option>
+                    {clientes.map(cliente => (
+                    <option key={cliente.id} value={cliente.id}>
+                        {cliente.nome}
+                    </option>
+                    ))}
+                </select>
+                <textarea
+                    placeholder="Observações (opcional)"
+                    value={formData.observacoes || ''}
+                    onChange={e => setFormData({ ...formData, observacoes: e.target.value })}
+                    rows={3}
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+            </div>
         </div>
-        <div className="mb-4">
-          <label htmlFor="valor" className="block text-gray-700 text-sm font-bold mb-2">Valor:</label>
-          <input type="number" id="valor" placeholder="0.00" value={formData.valor} onChange={e => setFormData({...formData, valor: parseFloat(e.target.value)})} step="0.01" required className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"/>
+
+        <div className="form-actions flex justify-center gap-6 pt-4">
+            <button
+                type="button"
+                onClick={onCancel}
+                className="w-1/3 bg-gray-500 hover:bg-gray-600 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+                Cancelar
+            </button>
+            <button
+                type="submit"
+                className="w-1/3 bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+                Salvar
+            </button>
         </div>
-        <div className="mb-4">
-          <label htmlFor="data_vencimento" className="block text-gray-700 text-sm font-bold mb-2">Data de Vencimento:</label>
-          <input type="date" id="data_vencimento" value={formData.data_vencimento} onChange={e => setFormData({...formData, data_vencimento: e.target.value})} required className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"/>
-        </div>
-        <div className="mb-4">
-          <label htmlFor="cliente_id" className="block text-gray-700 text-sm font-bold mb-2">Cliente:</label>
-          <select id="cliente_id" value={formData.cliente_id} onChange={e => setFormData({...formData, cliente_id: parseInt(e.target.value)})} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
-            <option value="0">Nenhum</option>
-            {clientes.map(cliente => (<option key={cliente.id} value={cliente.id}>{cliente.nome}</option>))}
-          </select>
-        </div>
-        <div className="mb-4 md:col-span-2">
-          <label htmlFor="observacoes" className="block text-gray-700 text-sm font-bold mb-2">Observações:</label>
-          <textarea id="observacoes" placeholder="Observações" value={formData.observacoes || ''} onChange={e => setFormData({...formData, observacoes: e.target.value})} rows={3} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"/>
-        </div>
-      </div>
-      <div className="form-actions flex justify-end gap-4 mt-6">
-        <button type="submit" className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md">Salvar</button>
-        <button type="button" onClick={onCancel} className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md">Cancelar</button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 };
 

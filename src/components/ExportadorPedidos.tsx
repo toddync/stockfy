@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 interface Pedido {
   id: number;
@@ -62,23 +62,35 @@ const ExportadorPedidos: React.FC = () => {
         return;
     }
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Pedidos');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Pedidos');
 
-    // Define column widths
-    worksheet['!cols'] = [
-      { wch: 10 }, // ID Pedido
-      { wch: 20 }, // Cliente
-      { wch: 12 }, // Data
-      { wch: 15 }, // Status Pedido
-      { wch: 25 }, // Produto
-      { wch: 12 }, // Quantidade
-      { wch: 15 }, // Preço Unitário
-      { wch: 18 }, // Valor Total Item
+    // Define columns
+    worksheet.columns = [
+        { header: 'ID Pedido', key: 'ID Pedido', width: 10 },
+        { header: 'Cliente', key: 'Cliente', width: 20 },
+        { header: 'Data', key: 'Data', width: 12 },
+        { header: 'Status Pedido', key: 'Status Pedido', width: 15 },
+        { header: 'Produto', key: 'Produto', width: 25 },
+        { header: 'Quantidade', key: 'Quantidade', width: 12 },
+        { header: 'Preço Unitário', key: 'Preço Unitário', width: 15 },
+        { header: 'Valor Total Item', key: 'Valor Total Item', width: 18 },
     ];
+    
+    // Add rows
+    worksheet.addRows(dataToExport);
 
-    XLSX.writeFile(workbook, 'Relatorio_Pedidos.xlsx');
+    // Write to buffer
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    // Create a link and click it to download the file
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Relatorio_Pedidos.xlsx';
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   return (

@@ -203,15 +203,20 @@ const Clientes: React.FC = () => {
   );
 };
 
-// Componente de formulário reutilizável
-const ClienteForm: React.FC<{ 
-  cliente: Cliente | null; 
-  onSave: (cliente: Cliente) => void; 
-  onCancel: () => void 
+const ClienteForm: React.FC<{
+  cliente: Cliente | null;
+  onSave: (cliente: Cliente) => void;
+  onCancel: () => void;
 }> = ({ cliente, onSave, onCancel }) => {
-  const [formData, setFormData] = useState<Cliente>(cliente || {
-    nome: '', cpf_cnpj: '', telefone: '', cidade: '', ativo: true
-  });
+  const [formData, setFormData] = useState<Cliente>(
+    cliente || {
+      nome: '',
+      cpf_cnpj: '',
+      telefone: '',
+      cidade: '',
+      ativo: true,
+    }
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,97 +224,113 @@ const ClienteForm: React.FC<{
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form-container bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{cliente ? 'Editar' : 'Novo'} Cliente</h2>
-      
-      <div className="mb-4">
-        <label htmlFor="nome" className="block text-gray-700 text-sm font-bold mb-2">Nome:</label>
-        <input
-          type="text"
-          id="nome"
-          placeholder="Nome"
-          value={formData.nome}
-          onChange={e => setFormData({...formData, nome: e.target.value})}
-          required
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
-      
-      <div className="mb-4">
-        <label htmlFor="cpf_cnpj" className="block text-gray-700 text-sm font-bold mb-2">CPF ou CNPJ:</label>
-        <input
-          type="text"
-          id="cpf_cnpj"
-          placeholder="CPF/CNPJ"
-          value={formData.cpf_cnpj}
-          onChange={e => setFormData({...formData, cpf_cnpj: e.target.value})}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
+    <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl p-10">
+      <h2 className="text-4xl font-bold text-gray-800 text-center mb-4">
+        {cliente ? 'Editar Cliente' : 'Novo Cliente'}
+      </h2>
+      <p className="text-center text-gray-600 mb-8 text-lg">
+        Preencha os dados para {cliente ? 'atualizar o' : 'cadastrar um novo'} cliente.
+      </p>
 
-      <div className="mb-4">
-        <label htmlFor="telefone" className="block text-gray-700 text-sm font-bold mb-2">Telefone:</label>
-        <input
-          type="text"
-          id="telefone"
-          placeholder="Telefone"
-          value={formData.telefone}
-          onChange={e => setFormData({...formData, telefone: e.target.value})}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div>
+          <label htmlFor="nome" className="block text-xl font-semibold text-gray-700 mb-2">
+            1. Nome Completo
+          </label>
+          <input
+            type="text"
+            id="nome"
+            placeholder="Nome completo do cliente"
+            value={formData.nome}
+            onChange={e => setFormData({ ...formData, nome: e.target.value })}
+            required
+            className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
 
-      <div className="mb-4">
-        <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">Email:</label>
-        <input
-          type="email"
-          id="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={e => setFormData({...formData, email: e.target.value})}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
+        <div>
+          <label htmlFor="cpf_cnpj" className="block text-xl font-semibold text-gray-700 mb-2">
+            2. CPF ou CNPJ
+          </label>
+          <input
+            type="text"
+            id="cpf_cnpj"
+            placeholder="Documento (CPF ou CNPJ)"
+            value={formData.cpf_cnpj}
+            onChange={e => setFormData({ ...formData, cpf_cnpj: e.target.value })}
+            className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
 
-      <div className="mb-4">
-        <label htmlFor="cidade" className="block text-gray-700 text-sm font-bold mb-2">Cidade:</label>
-        <input
-          type="text"
-          id="cidade"
-          placeholder="Cidade"
-          value={formData.cidade}
-          onChange={e => setFormData({...formData, cidade: e.target.value})}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
+        <div>
+          <label htmlFor="telefone" className="block text-xl font-semibold text-gray-700 mb-2">
+            3. Contato
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              type="text"
+              id="telefone"
+              placeholder="Telefone"
+              value={formData.telefone}
+              onChange={e => setFormData({ ...formData, telefone: e.target.value })}
+              className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <input
+              type="email"
+              id="email"
+              placeholder="Email (opcional)"
+              value={formData.email || ''}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
+              className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
 
-      <div className="mb-6 flex items-center">
-        <input
-          type="checkbox"
-          id="ativo"
-          checked={formData.ativo}
-          onChange={e => setFormData({...formData, ativo: e.target.checked})}
-          className="mr-2 leading-tight"
-        />
-        <label htmlFor="ativo" className="text-gray-700 text-sm font-bold">Ativo</label>
-      </div>
+        <div>
+          <label htmlFor="cidade" className="block text-xl font-semibold text-gray-700 mb-2">
+            4. Localização
+          </label>
+          <input
+            type="text"
+            id="cidade"
+            placeholder="Cidade"
+            value={formData.cidade}
+            onChange={e => setFormData({ ...formData, cidade: e.target.value })}
+            className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        
+        <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="ativo"
+              checked={formData.ativo}
+              onChange={e => setFormData({ ...formData, ativo: e.target.checked })}
+              className="h-6 w-6 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor="ativo" className="ml-3 block text-xl font-semibold text-gray-700">
+              5. Cliente Ativo
+            </label>
+        </div>
 
-      <div className="form-actions flex justify-end gap-4">
-        <button 
-          type="submit"
-          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-        >
-          Salvar
-        </button>
-        <button 
-          type="button" 
-          onClick={onCancel}
-          className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-        >
-          Cancelar
-        </button>
-      </div>
-    </form>
+
+        <div className="form-actions flex justify-center gap-6 pt-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="w-1/3 bg-gray-500 hover:bg-gray-600 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            className="w-1/3 bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+          >
+            Salvar
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
 

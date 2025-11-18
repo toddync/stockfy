@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 
-interface SimuladorDescontosProps {
-  // No props needed for now, as it will manage its own state and mock data
-}
 
-const SimuladorDescontos: React.FC<SimuladorDescontosProps> = () => {
+
+const SimuladorDescontos: React.FC = () => {
   const [originalPrice, setOriginalPrice] = useState<number>(100);
   const [discountPercentage, setDiscountPercentage] = useState<number>(10);
   const [costPrice, setCostPrice] = useState<number>(50);
@@ -12,7 +10,7 @@ const SimuladorDescontos: React.FC<SimuladorDescontosProps> = () => {
   const [simulatedProfit, setSimulatedProfit] = useState<number>(0);
   const [simulatedMargin, setSimulatedMargin] = useState<number>(0);
 
-  const calculateSimulation = () => {
+  const calculateSimulation = React.useCallback(() => {
     const discountAmount = originalPrice * (discountPercentage / 100);
     const newPrice = originalPrice - discountAmount;
     const profit = newPrice - costPrice;
@@ -21,9 +19,9 @@ const SimuladorDescontos: React.FC<SimuladorDescontosProps> = () => {
     setSimulatedPrice(newPrice);
     setSimulatedProfit(profit);
     setSimulatedMargin(margin);
-  };
+  }, [originalPrice, discountPercentage, costPrice]);
 
-  React.useEffect(() => {
+  React.useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
     calculateSimulation();
   }, [originalPrice, discountPercentage, costPrice]);
 

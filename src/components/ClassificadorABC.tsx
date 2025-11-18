@@ -8,11 +8,9 @@ interface ABCItem {
   classe: 'A' | 'B' | 'C';
 }
 
-interface ClassificadorABCProps {
-  // No direct props needed initially, as data will be fetched internally
-}
 
-const ClassificadorABC: React.FC<ClassificadorABCProps> = () => {
+
+const ClassificadorABC: React.FC = () => {
   const [abcData, setAbcData] = useState<ABCItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

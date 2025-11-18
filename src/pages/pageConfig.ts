@@ -7,7 +7,7 @@ import ProdutoGrupos from './ProdutoGrupos';
 import Produtos from './Produtos';
 import Fornecedores from './Fornecedores';
 import Pedidos from './Pedidos';
-import NovaCompraPage from './NovaCompraPage';
+import Compras from './Compras';
 import Devolucoes from './Devolucoes';
 import AjusteEstoquePage from './AjusteEstoquePage'; // NEW: Ajuste de Estoque
 import Rotas from './Rotas';
@@ -19,7 +19,6 @@ import Usuarios from './Usuarios';
 import Permissoes from './Permissoes';
 import UsuarioPermissoes from './UsuarioPermissoes';
 import DetalhesPedido from './DetalhesPedido';
-import NovoPedido from './NovoPedido';
 
 // Keep LoginPage explicitly if it's the initial entry
 import LoginPage from './LoginPage';
@@ -38,7 +37,7 @@ const pageConfigs: PageConfig[] = [
     { path: '/produtos', component: Produtos, name: 'Produtos' },
     { path: '/fornecedores', component: Fornecedores, name: 'Fornecedores' },
     { path: '/pedidos', component: Pedidos, name: 'Pedidos' },
-    { path: '/compras/nova', component: NovaCompraPage, name: 'Nova Compra' },
+    { path: '/compras', component: Compras, name: 'Compras' },
     { path: '/devolucoes', component: Devolucoes, name: 'Devoluções' },
     { path: '/ajuste-estoque', component: AjusteEstoquePage, name: 'Ajuste de Estoque' }, // NEW: Ajuste de Estoque
     { path: '/rotas', component: Rotas, name: 'Rotas' },
@@ -49,7 +48,6 @@ const pageConfigs: PageConfig[] = [
     { path: '/usuarios', component: Usuarios, name: 'Usuários' },
     { path: '/permissoes', component: Permissoes, name: 'Permissões' },
     { path: '/usuario-permissoes', component: UsuarioPermissoes, name: 'Permissões de Usuário' },
-    { path: '/pedidos/novo', component: NovoPedido, name: 'Novo Pedido' },
     { path: '/pedidos/:id', component: DetalhesPedido, name: 'Detalhes do Pedido' },
 ];
 

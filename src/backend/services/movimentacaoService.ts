@@ -51,8 +51,14 @@ class MovimentacaoService {
             };
 
             const [movimentacaoResult] = await connection.execute<ResultSetHeader>(
-                'INSERT INTO movimentacoes_estoque SET ?',
-                [movimentacaoInsertData]
+                'INSERT INTO movimentacoes_estoque (tipo_movimentacao, numero_documento, data_documento, data_base, observacoes) VALUES (?, ?, ?, ?, ?)',
+                [
+                    movimentacaoInsertData.tipo_movimentacao,
+                    movimentacaoInsertData.numero_documento,
+                    movimentacaoInsertData.data_documento,
+                    movimentacaoInsertData.data_base,
+                    movimentacaoInsertData.observacoes,
+                ]
             );
             const movimentacaoId = movimentacaoResult.insertId;
 
@@ -70,7 +76,10 @@ class MovimentacaoService {
                 quantidade: data.quantidade,
                 preco_custo: preco_custo
             };
-            await connection.execute('INSERT INTO movimentacao_itens SET ?', [itemInsertData]);
+            await connection.execute(
+                'INSERT INTO movimentacao_itens (movimentacao_id, produto_id, quantidade, preco_custo) VALUES (?, ?, ?, ?)',
+                [itemInsertData.movimentacao_id, itemInsertData.produto_id, itemInsertData.quantidade, itemInsertData.preco_custo]
+            );
 
             // 4. If it's a simple return (not a defect), update the stock.
             // This is a simplified logic. It assumes the main product has stock.
@@ -136,8 +145,14 @@ class MovimentacaoService {
             };
 
             const [movimentacaoResult] = await connection.execute<ResultSetHeader>(
-                'INSERT INTO movimentacoes_estoque SET ?',
-                [movimentacaoInsertData]
+                'INSERT INTO movimentacoes_estoque (tipo_movimentacao, numero_documento, data_documento, data_base, observacoes) VALUES (?, ?, ?, ?, ?)',
+                [
+                    movimentacaoInsertData.tipo_movimentacao,
+                    movimentacaoInsertData.numero_documento,
+                    movimentacaoInsertData.data_documento,
+                    movimentacaoInsertData.data_base,
+                    movimentacaoInsertData.observacoes,
+                ]
             );
             const movimentacaoId = movimentacaoResult.insertId;
 
@@ -155,7 +170,10 @@ class MovimentacaoService {
                 quantidade: data.quantidade,
                 preco_custo: preco_custo
             };
-            await connection.execute('INSERT INTO movimentacao_itens SET ?', [itemInsertData]);
+            await connection.execute(
+                'INSERT INTO movimentacao_itens (movimentacao_id, produto_id, quantidade, preco_custo) VALUES (?, ?, ?, ?)',
+                [itemInsertData.movimentacao_id, itemInsertData.produto_id, itemInsertData.quantidade, itemInsertData.preco_custo]
+            );
 
             // 5. Update the stock
             await connection.execute(

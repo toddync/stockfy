@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Alerta from '../components/Alerta'; // Import Alerta
 
 interface Pedido {
@@ -22,7 +21,12 @@ interface Vendedor {
   nome: string;
 }
 
-const NovoPedido: React.FC = () => {
+interface NovoPedidoProps {
+  onSave: (pedidoId: number) => void;
+  onCancel: () => void;
+}
+
+const NovoPedido: React.FC<NovoPedidoProps> = ({ onSave, onCancel }) => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [formData, setFormData] = useState<Omit<Pedido, 'id'>>({
@@ -35,14 +39,12 @@ const NovoPedido: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null); // Add success state
-  const navigate = useNavigate();
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     const carregarDados = async () => {
       setLoading(true);
       setError(null);
-      // Do not reset success here so message can persist after reload
       try {
         const [clientesResponse, vendedoresResponse] = await Promise.all([
           fetch('http://localhost:3000/api/clientes'),
@@ -79,7 +81,7 @@ const NovoPedido: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSuccess(null); // Reset success message
+    setSuccess(null);
 
     try {
       const response = await fetch('http://localhost:3000/api/pedidos', {
@@ -95,10 +97,8 @@ const NovoPedido: React.FC = () => {
       }
 
       const novoPedido = await response.json();
-      setSuccess(`Pedido ${novoPedido.id} criado com sucesso! Redirecionando...`); // Set success message
-      setTimeout(() => {
-        navigate(`/pedidos/${novoPedido.id}`);
-      }, 1500); // Redirect after 1.5 seconds
+      setSuccess(`Pedido ${novoPedido.id} criado com sucesso!`);
+      onSave(novoPedido.id);
       
     } catch (e: unknown) {
       let message = "Erro desconhecido";
@@ -114,129 +114,117 @@ const NovoPedido: React.FC = () => {
     return <div className="text-center p-6">Carregando...</div>;
   }
 
-  // Error display from the initial load should still show.
-  // The Alerta component will handle subsequent errors from form submission.
-
   return (
-    <div className="page-container p-6 bg-white shadow-md rounded-lg">
-      {/* Display Alerta for success and error messages */}
-      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
-      {error && <Alerta message={error} onClose={() => setError(null)} />}
+    <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl p-10">
+        <h1 className="text-4xl font-bold text-gray-800 text-center mb-4">Novo Pedido</h1>
+        <p className="text-center text-gray-600 mb-8 text-lg">
+            Preencha os dados para criar um novo pedido.
+        </p>
 
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Novo Pedido</h1>
-      <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="numero_pedido" className="block text-sm font-medium text-gray-700">
-              Número do Pedido
-            </label>
-            <input
-              type="text"
-              id="numero_pedido"
-              value={formData.numero_pedido}
-              onChange={(e) => setFormData({ ...formData, numero_pedido: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="data_pedido" className="block text-sm font-medium text-gray-700">
-              Data do Pedido
-            </label>
-            <input
-              type="date"
-              id="data_pedido"
-              value={formData.data_pedido}
-              onChange={(e) => setFormData({ ...formData, data_pedido: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="cliente_id" className="block text-sm font-medium text-gray-700">
-              Cliente
-            </label>
-            <select
-              id="cliente_id"
-              value={formData.cliente_id}
-              onChange={(e) => setFormData({ ...formData, cliente_id: parseInt(e.target.value) })}
-              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            >
-              <option value="">Selecione um cliente</option>
-              {clientes.map((cliente) => (
-                <option key={cliente.id} value={cliente.id}>
-                  {cliente.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="vendedor_id" className="block text-sm font-medium text-gray-700">
-              Vendedor
-            </label>
-            <select
-              id="vendedor_id"
-              value={formData.vendedor_id}
-              onChange={(e) => setFormData({ ...formData, vendedor_id: parseInt(e.target.value) })}
-              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            >
-              <option value="">Selecione um vendedor</option>
-              {vendedores.map((vendedor) => (
-                <option key={vendedor.id} value={vendedor.id}>
-                  {vendedor.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="valor_total" className="block text-sm font-medium text-gray-700">
-              Valor Total
-            </label>
-            <input
-              type="number"
-              id="valor_total"
-              value={formData.valor_total}
-              onChange={(e) => setFormData({ ...formData, valor_total: parseFloat(e.target.value) })}
-              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="situacao" className="block text-sm font-medium text-gray-700">
-              Situação
-            </label>
-            <select
-              id="situacao"
-              value={formData.situacao}
-              onChange={(e) => setFormData({ ...formData, situacao: e.target.value as any })}
-              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            >
-              <option value="pendente">Pendente</option>
-              <option value="faturado">Faturado</option>
-              <option value="cancelado">Cancelado</option>
-              <option value="perdido">Perdido</option>
-            </select>
-          </div>
-        </div>
-        <div className="mt-6 flex justify-end">
-          <button
-            type="button"
-            onClick={() => navigate('/pedidos')}
-            className="mr-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-          >
-            Salvar e ir para Detalhes
-          </button>
-        </div>
-      </form>
+        {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
+        {error && <Alerta message={error} onClose={() => setError(null)} />}
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+            <div>
+                <label className="block text-xl font-semibold text-gray-700 mb-2">
+                    1. Informações do Pedido
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                        type="text"
+                        placeholder="Número do Pedido"
+                        value={formData.numero_pedido}
+                        onChange={(e) => setFormData({ ...formData, numero_pedido: e.target.value })}
+                        required
+                        className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <input
+                        type="date"
+                        value={formData.data_pedido}
+                        onChange={(e) => setFormData({ ...formData, data_pedido: e.target.value })}
+                        required
+                        className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                </div>
+            </div>
+
+            <div>
+                <label className="block text-xl font-semibold text-gray-700 mb-2">
+                    2. Cliente e Vendedor
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select
+                        value={formData.cliente_id}
+                        onChange={(e) => setFormData({ ...formData, cliente_id: parseInt(e.target.value) })}
+                        required
+                        className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                        <option value="">Selecione um cliente</option>
+                        {clientes.map((cliente) => (
+                            <option key={cliente.id} value={cliente.id}>
+                            {cliente.nome}
+                            </option>
+                        ))}
+                    </select>
+                    <select
+                        value={formData.vendedor_id}
+                        onChange={(e) => setFormData({ ...formData, vendedor_id: parseInt(e.target.value) })}
+                        required
+                        className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                        <option value="">Selecione um vendedor</option>
+                        {vendedores.map((vendedor) => (
+                            <option key={vendedor.id} value={vendedor.id}>
+                            {vendedor.nome}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label className="block text-xl font-semibold text-gray-700 mb-2">
+                    3. Valor e Situação
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                        type="number"
+                        placeholder="Valor Total"
+                        value={formData.valor_total}
+                        onChange={(e) => setFormData({ ...formData, valor_total: parseFloat(e.target.value) })}
+                        required
+                        className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <select
+                        value={formData.situacao}
+                        onChange={(e) => setFormData({ ...formData, situacao: e.target.value as Pedido['situacao'] })}
+                        required
+                        className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                        <option value="pendente">Pendente</option>
+                        <option value="faturado">Faturado</option>
+                        <option value="cancelado">Cancelado</option>
+                        <option value="perdido">Perdido</option>
+                    </select>
+                </div>
+            </div>
+
+            <div className="form-actions flex justify-center gap-6 pt-4">
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    className="w-1/3 bg-gray-500 hover:bg-gray-600 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="submit"
+                    className="w-1/3 bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+                >
+                    Salvar Pedido
+                </button>
+            </div>
+        </form>
     </div>
   );
 };

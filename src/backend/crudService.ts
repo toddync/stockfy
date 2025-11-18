@@ -37,7 +37,7 @@ class CrudService {
         return rows.length > 0 ? rows[0] : null;
     }
 
-    async create<T extends Record<string, any>>(tableName: string, data: T): Promise<number> {
+    async create<T extends Record<string, any>>(tableName: string, data: T): Promise<number> { // eslint-disable-line @typescript-eslint/no-explicit-any
         const pool = await this.getPool();
         const columns = Object.keys(data).map(key => `${key}`).join(', ');
         const placeholders = Object.keys(data).map(() => '?').join(', ');
@@ -48,7 +48,7 @@ class CrudService {
         return result.insertId;
     }
 
-    async update<T extends Record<string, any>>(tableName: string, id: string | number, data: Partial<T>): Promise<boolean> {
+    async update<T extends Record<string, any>>(tableName: string, id: string | number, data: Partial<T>): Promise<boolean> { // eslint-disable-line @typescript-eslint/no-explicit-any
         const pool = await this.getPool();
         const setClauses = Object.keys(data).map(key => `${key} = ?`).join(', ');
         const values = Object.values(data);

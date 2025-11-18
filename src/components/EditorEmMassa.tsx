@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 
+interface ProductForEditor {
+  id: number;
+  codigo: string;
+  descricao: string;
+}
+
 interface ProductVariant {
   id: number;
-  productId: number;
+  produto_id: number;
   tamanho: string;
   cor: string;
-  estoque: number;
-  precoAdicional: number;
+  estoque_atual: number;
+  sku: string;
 }
 
-interface EditorEmMassaProps {
-  // No direct props needed initially, as products/variants will be selected within the component
-}
-
-const EditorEmMassa: React.FC<EditorEmMassaProps> = () => {
-  const [products, setProducts] = useState<any[]>([]); // Simplified product type for selection
+const EditorEmMassa: React.FC = () => {
+  const [products, setProducts] = useState<ProductForEditor[]>([]); // Use the new interface
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [loading, setLoading] = useState(false);
@@ -76,7 +78,7 @@ const EditorEmMassa: React.FC<EditorEmMassaProps> = () => {
     fetchVariants();
   }, [selectedProductId]);
 
-  const handleVariantChange = (id: number, field: keyof ProductVariant, value: any) => {
+  const handleVariantChange = (id: number, field: keyof ProductVariant, value: ProductVariant[typeof field]) => { // Fix 'value: any'
     setVariants(prevVariants =>
       prevVariants.map(variant =>
         variant.id === id ? { ...variant, [field]: value } : variant
@@ -165,32 +167,31 @@ const EditorEmMassa: React.FC<EditorEmMassaProps> = () => {
           <table className="min-w-full bg-white border border-gray-200">
             <thead>
               <tr className="bg-gray-100 border-b">
+                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">SKU</th>
                 <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Tamanho</th>
                 <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Cor</th>
                 <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Estoque</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Preço Adicional</th>
               </tr>
             </thead>
             <tbody>
               {variants.map(variant => (
                 <tr key={variant.id} className="border-b hover:bg-gray-50">
+                  <td className="py-3 px-4 text-sm">
+                    <input
+                      type="text"
+                      value={variant.sku}
+                      onChange={e => handleVariantChange(variant.id, 'sku', e.target.value)}
+                      className="shadow-sm appearance-none border rounded w-20 py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                  </td>
                   <td className="py-3 px-4 text-sm text-gray-700">{variant.tamanho}</td>
                   <td className="py-3 px-4 text-sm text-gray-700">{variant.cor}</td>
                   <td className="py-3 px-4 text-sm">
                     <input
                       type="number"
-                      value={variant.estoque}
-                      onChange={e => handleVariantChange(variant.id, 'estoque', parseInt(e.target.value))}
+                      value={variant.estoque_atual}
+                      onChange={e => handleVariantChange(variant.id, 'estoque_atual', parseInt(e.target.value))}
                       className="shadow-sm appearance-none border rounded w-20 py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    />
-                  </td>
-                  <td className="py-3 px-4 text-sm">
-                    <input
-                      type="number"
-                      value={variant.precoAdicional}
-                      onChange={e => handleVariantChange(variant.id, 'precoAdicional', parseFloat(e.target.value))}
-                      step="0.01"
-                      className="shadow-sm appearance-none border rounded w-24 py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                     />
                   </td>
                 </tr>

@@ -183,15 +183,18 @@ const Rotas: React.FC = () => {
   );
 };
 
-// Componente de formulário reutilizável
-const RotaForm: React.FC<{ 
-  rota: Rota | null; 
-  onSave: (rota: Rota) => void; 
-  onCancel: () => void 
+const RotaForm: React.FC<{
+  rota: Rota | null;
+  onSave: (rota: Rota) => void;
+  onCancel: () => void;
 }> = ({ rota, onSave, onCancel }) => {
-  const [formData, setFormData] = useState<Rota>(rota || {
-    codigo: '', bairro: '', nome: ''
-  });
+  const [formData, setFormData] = useState<Rota>(
+    rota || {
+      codigo: '',
+      bairro: '',
+      nome: '',
+    }
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,63 +202,69 @@ const RotaForm: React.FC<{
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form-container bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{rota ? 'Editar' : 'Nova'} Rota</h2>
-      
-      <div className="mb-4">
-        <label htmlFor="codigo" className="block text-gray-700 text-sm font-bold mb-2">Código:</label>
-        <input
-          type="text"
-          id="codigo"
-          placeholder="Código"
-          value={formData.codigo}
-          onChange={e => setFormData({...formData, codigo: e.target.value})}
-          required
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>
-
-      <div className="mb-4">
-        <label htmlFor="bairro" className="block text-gray-700 text-sm font-bold mb-2">Bairro:</label>
-        <input
-          type="text"
-          id="bairro"
-          placeholder="Bairro"
-          value={formData.bairro || ''}
-          onChange={e => setFormData({...formData, bairro: e.target.value})}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
+    <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl p-10">
+        <h2 className="text-4xl font-bold text-gray-800 text-center mb-4">
+            {rota ? 'Editar' : 'Nova'} Rota
+        </h2>
+        <p className="text-center text-gray-600 mb-8 text-lg">
+            Preencha os dados para {rota ? 'atualizar a' : 'criar uma nova'} rota.
+        </p>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div>
+            <label className="block text-xl font-semibold text-gray-700 mb-2">
+                1. Informações da Rota
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                    type="text"
+                    placeholder="Código"
+                    value={formData.codigo}
+                    onChange={e => setFormData({ ...formData, codigo: e.target.value })}
+                    required
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <input
+                    type="text"
+                    placeholder="Nome"
+                    value={formData.nome || ''}
+                    onChange={e => setFormData({ ...formData, nome: e.target.value })}
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+            </div>
         </div>
 
-        <div className="mb-4">
-          <label htmlFor="nome" className="block text-gray-700 text-sm font-bold mb-2">Nome:</label>
-          <input
-            type="text"
-            id="nome"
-            placeholder="Nome"
-            value={formData.nome || ''}
-            onChange={e => setFormData({...formData, nome: e.target.value})}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
+        <div>
+            <label htmlFor="bairro" className="block text-xl font-semibold text-gray-700 mb-2">
+                2. Bairro
+            </label>
+            <input
+                type="text"
+                id="bairro"
+                placeholder="Bairro"
+                value={formData.bairro || ''}
+                onChange={e => setFormData({ ...formData, bairro: e.target.value })}
+                className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
         </div>
-        
-        <div className="form-actions flex justify-end gap-4">
-          <button 
-            type="submit"
-            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-          >
-            Salvar
-          </button>
-          <button 
-            type="button" 
-            onClick={onCancel}
-            className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-          >
-            Cancelar
-          </button>
+
+        <div className="form-actions flex justify-center gap-6 pt-4">
+            <button
+                type="button"
+                onClick={onCancel}
+                className="w-1/3 bg-gray-500 hover:bg-gray-600 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+                Cancelar
+            </button>
+            <button
+                type="submit"
+                className="w-1/3 bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+                Salvar
+            </button>
         </div>
       </form>
-    );
-  };
+    </div>
+  );
+};
   
   export default Rotas;

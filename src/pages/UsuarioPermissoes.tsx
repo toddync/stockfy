@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
+import Alerta from '../components/Alerta';
 
 interface UsuarioPermissao {
   usuario_id: number;
@@ -215,17 +216,19 @@ const UsuarioPermissoes: React.FC = () => {
   );
 };
 
-// Componente de formulário reutilizável
-const UsuarioPermissaoForm: React.FC<{ 
-  usuarioPermissao: UsuarioPermissao | null; 
+const UsuarioPermissaoForm: React.FC<{
+  usuarioPermissao: UsuarioPermissao | null;
   usuarios: Usuario[];
   permissoes: Permissao[];
-  onSave: (up: UsuarioPermissao) => void; 
-  onCancel: () => void 
+  onSave: (up: UsuarioPermissao) => void;
+  onCancel: () => void;
 }> = ({ usuarioPermissao, usuarios, permissoes, onSave, onCancel }) => {
-  const [formData, setFormData] = useState<UsuarioPermissao>(usuarioPermissao || {
-    usuario_id: 0, permissao_id: 0
-  });
+  const [formData, setFormData] = useState<UsuarioPermissao>(
+    usuarioPermissao || {
+      usuario_id: 0,
+      permissao_id: 0,
+    }
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -233,57 +236,70 @@ const UsuarioPermissaoForm: React.FC<{
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form-container bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">Associar Permissão a Usuário</h2>
-      
-      <div className="mb-4">
-        <label htmlFor="usuario_id" className="block text-gray-700 text-sm font-bold mb-2">Usuário:</label>
-        <select
-          id="usuario_id"
-          value={formData.usuario_id}
-          onChange={e => setFormData({...formData, usuario_id: parseInt(e.target.value)})}
-          required
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        >
-          <option value="">Selecione um Usuário</option>
-          {usuarios.map(usuario => (
-            <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>
-          ))}
-        </select>
-      </div>
+    <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl p-10">
+        <h2 className="text-4xl font-bold text-gray-800 text-center mb-4">
+            Associar Permissão a Usuário
+        </h2>
+        <p className="text-center text-gray-600 mb-8 text-lg">
+            Selecione o usuário e a permissão que deseja associar.
+        </p>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div>
+            <label className="block text-xl font-semibold text-gray-700 mb-2">
+                1. Selecione o Usuário
+            </label>
+            <select
+                id="usuario_id"
+                value={formData.usuario_id}
+                onChange={e => setFormData({ ...formData, usuario_id: parseInt(e.target.value) })}
+                required
+                className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+                <option value="">Selecione um Usuário</option>
+                {usuarios.map(usuario => (
+                <option key={usuario.id} value={usuario.id}>
+                    {usuario.nome}
+                </option>
+                ))}
+            </select>
+        </div>
+        <div>
+            <label className="block text-xl font-semibold text-gray-700 mb-2">
+                2. Selecione a Permissão
+            </label>
+            <select
+                id="permissao_id"
+                value={formData.permissao_id}
+                onChange={e => setFormData({ ...formData, permissao_id: parseInt(e.target.value) })}
+                required
+                className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+                <option value="">Selecione uma Permissão</option>
+                {permissoes.map(permissao => (
+                <option key={permissao.id} value={permissao.id}>
+                    {permissao.descricao}
+                </option>
+                ))}
+            </select>
+        </div>
 
-      <div className="mb-4">
-        <label htmlFor="permissao_id" className="block text-gray-700 text-sm font-bold mb-2">Permissão:</label>
-        <select
-          id="permissao_id"
-          value={formData.permissao_id}
-          onChange={e => setFormData({...formData, permissao_id: parseInt(e.target.value)})}
-          required
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        >
-          <option value="">Selecione uma Permissão</option>
-          {permissoes.map(permissao => (
-            <option key={permissao.id} value={permissao.id}>{permissao.descricao}</option>
-          ))}
-        </select>
-      </div>
-      
-      <div className="form-actions flex justify-end gap-4">
-        <button 
-          type="submit"
-          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-        >
-          Salvar
-        </button>
-        <button 
-          type="button" 
-          onClick={onCancel}
-          className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-        >
-          Cancelar
-        </button>
-      </div>
-    </form>
+        <div className="form-actions flex justify-center gap-6 pt-4">
+            <button
+                type="button"
+                onClick={onCancel}
+                className="w-1/3 bg-gray-500 hover:bg-gray-600 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+                Cancelar
+            </button>
+            <button
+                type="submit"
+                className="w-1/3 bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+                Salvar
+            </button>
+        </div>
+      </form>
+    </div>
   );
 };
 

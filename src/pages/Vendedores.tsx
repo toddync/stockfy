@@ -193,15 +193,27 @@ const Vendedores: React.FC = () => {
   );
 };
 
-// Componente de formulário reutilizável
-const VendedorForm: React.FC<{ 
-  vendedor: Vendedor | null; 
-  onSave: (vendedor: Vendedor) => void; 
-  onCancel: () => void 
+const VendedorForm: React.FC<{
+  vendedor: Vendedor | null;
+  onSave: (vendedor: Vendedor) => void;
+  onCancel: () => void;
 }> = ({ vendedor, onSave, onCancel }) => {
-  const [formData, setFormData] = useState<Vendedor>(vendedor || {
-    codigo: '', nome: '', cpf: '', rg: '', endereco: '', bairro: '', cidade: '', estado: '', cep: '', telefone: '', email: '', pracas_atendimento: '[]'
-  });
+  const [formData, setFormData] = useState<Vendedor>(
+    vendedor || {
+      codigo: '',
+      nome: '',
+      cpf: '',
+      rg: '',
+      endereco: '',
+      bairro: '',
+      cidade: '',
+      estado: '',
+      cep: '',
+      telefone: '',
+      email: '',
+      pracas_atendimento: '[]',
+    }
+  );
 
   // Safely parse the pracas_atendimento JSON string
   const getPracasAsArray = () => {
@@ -217,177 +229,109 @@ const VendedorForm: React.FC<{
     setFormData({ ...formData, pracas_atendimento: JSON.stringify(newPracas) });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form-container bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{vendedor ? 'Editar' : 'Novo'} Vendedor</h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="mb-4">
-          <label htmlFor="codigo" className="block text-gray-700 text-sm font-bold mb-2">Código:</label>
-          <input
-            type="text"
-            id="codigo"
-            placeholder="Código"
-            value={formData.codigo}
-            onChange={e => setFormData({...formData, codigo: e.target.value})}
-            required
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
+    <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl p-10">
+        <h2 className="text-4xl font-bold text-gray-800 text-center mb-4">
+            {vendedor ? 'Editar' : 'Novo'} Vendedor
+        </h2>
+        <p className="text-center text-gray-600 mb-8 text-lg">
+            Preencha os dados para {vendedor ? 'atualizar o' : 'cadastrar um novo'} vendedor.
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-8">
+            <div>
+                <label className="block text-xl font-semibold text-gray-700 mb-2">
+                    1. Informações Pessoais
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                        type="text"
+                        placeholder="Código"
+                        value={formData.codigo}
+                        onChange={e => setFormData({ ...formData, codigo: e.target.value })}
+                        required
+                        className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <input
+                        type="text"
+                        placeholder="Nome"
+                        value={formData.nome}
+                        onChange={e => setFormData({ ...formData, nome: e.target.value })}
+                        required
+                        className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <input
+                        type="text"
+                        placeholder="CPF"
+                        value={formData.cpf || ''}
+                        onChange={e => setFormData({ ...formData, cpf: e.target.value })}
+                        className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <input
+                        type="text"
+                        placeholder="RG"
+                        value={formData.rg || ''}
+                        onChange={e => setFormData({ ...formData, rg: e.target.value })}
+                        className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                </div>
+            </div>
 
-        <div className="mb-4">
-          <label htmlFor="nome" className="block text-gray-700 text-sm font-bold mb-2">Nome:</label>
-          <input
-            type="text"
-            id="nome"
-            placeholder="Nome"
-            value={formData.nome}
-            onChange={e => setFormData({...formData, nome: e.target.value})}
-            required
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-        
-        <div className="mb-4">
-          <label htmlFor="cpf" className="block text-gray-700 text-sm font-bold mb-2">CPF:</label>
-          <input
-            type="text"
-            id="cpf"
-            placeholder="CPF"
-            value={formData.cpf || ''}
-            onChange={e => setFormData({...formData, cpf: e.target.value})}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
+            <div>
+                <label className="block text-xl font-semibold text-gray-700 mb-2">
+                    2. Contato
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                        type="text"
+                        placeholder="Telefone"
+                        value={formData.telefone || ''}
+                        onChange={e => setFormData({ ...formData, telefone: e.target.value })}
+                        className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        value={formData.email || ''}
+                        onChange={e => setFormData({ ...formData, email: e.target.value })}
+                        className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                </div>
+            </div>
 
-        <div className="mb-4">
-          <label htmlFor="rg" className="block text-gray-700 text-sm font-bold mb-2">RG:</label>
-          <input
-            type="text"
-            id="rg"
-            placeholder="RG"
-            value={formData.rg || ''}
-            onChange={e => setFormData({...formData, rg: e.target.value})}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="endereco" className="block text-gray-700 text-sm font-bold mb-2">Endereço:</label>
-          <input
-            type="text"
-            id="endereco"
-            placeholder="Endereço"
-            value={formData.endereco || ''}
-            onChange={e => setFormData({...formData, endereco: e.target.value})}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="bairro" className="block text-gray-700 text-sm font-bold mb-2">Bairro:</label>
-          <input
-            type="text"
-            id="bairro"
-            placeholder="Bairro"
-            value={formData.bairro || ''}
-            onChange={e => setFormData({...formData, bairro: e.target.value})}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="cidade" className="block text-gray-700 text-sm font-bold mb-2">Cidade:</label>
-          <input
-            type="text"
-            id="cidade"
-            placeholder="Cidade"
-            value={formData.cidade || ''}
-            onChange={e => setFormData({...formData, cidade: e.target.value})}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="estado" className="block text-gray-700 text-sm font-bold mb-2">Estado:</label>
-          <input
-            type="text"
-            id="estado"
-            placeholder="Estado"
-            value={formData.estado || ''}
-            onChange={e => setFormData({...formData, estado: e.target.value})}
-            maxLength={2}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="cep" className="block text-gray-700 text-sm font-bold mb-2">CEP:</label>
-          <input
-            type="text"
-            id="cep"
-            placeholder="CEP"
-            value={formData.cep || ''}
-            onChange={e => setFormData({...formData, cep: e.target.value})}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="telefone" className="block text-gray-700 text-sm font-bold mb-2">Telefone:</label>
-          <input
-            type="text"
-            id="telefone"
-            placeholder="Telefone"
-            value={formData.telefone || ''}
-            onChange={e => setFormData({...formData, telefone: e.target.value})}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">Email:</label>
-          <input
-            type="email"
-            id="email"
-            placeholder="Email"
-            value={formData.email || ''}
-            onChange={e => setFormData({...formData, email: e.target.value})}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-
-        <div className="mb-4 md:col-span-2">
-          <label htmlFor="pracas_atendimento" className="block text-gray-700 text-sm font-bold mb-2">Praças de Atendimento:</label>
-          <TagInput 
-            tags={getPracasAsArray()} 
-            onTagsChange={handlePracasChange}
-            placeholder="Adicione uma praça e pressione Enter"
-          />
-        </div>
-      </div>
-      
-      <div className="form-actions flex justify-end gap-4 mt-6">
-        <button 
-          type="submit"
-          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-        >
-          Salvar
-        </button>
-        <button 
-          type="button" 
-          onClick={onCancel}
-          className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors"
-        >
-          Cancelar
-        </button>
-      </div>
-    </form>
+            <div>
+                <label className="block text-xl font-semibold text-gray-700 mb-2">
+                    3. Praças de Atendimento
+                </label>
+                <TagInput
+                    tags={getPracasAsArray()}
+                    onTagsChange={handlePracasChange}
+                    placeholder="Adicione uma praça e pressione Enter"
+                />
+            </div>
+            
+            <div className="form-actions flex justify-center gap-6 pt-4">
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    className="w-1/3 bg-gray-500 hover:bg-gray-600 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="submit"
+                    className="w-1/3 bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+                >
+                    Salvar
+                </button>
+            </div>
+        </form>
+    </div>
   );
 };
 
