@@ -9,12 +9,25 @@ interface Usuario {
   data_criacao?: string; // TIMESTAMP type
 }
 
+import React, { useState, useEffect } from 'react';
+import Modal from '../components/Modal';
+import Alerta from '../components/Alerta'; // Import Alerta
+
+interface Usuario {
+  id?: number; // ID is optional for new entries
+  nome: string;
+  senha_hash: string; // Stored as hash in DB, but for simplicity in form, we'll treat it as a string input
+  ativo?: boolean;
+  data_criacao?: string; // TIMESTAMP type
+}
+
 const Usuarios: React.FC = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); // Add success state
 
   useEffect(() => {
     carregarUsuarios();
@@ -23,6 +36,7 @@ const Usuarios: React.FC = () => {
   const carregarUsuarios = async () => {
     setLoading(true);
     setError(null);
+    // Do not reset success here so message can persist after reload
     try {
       const response = await fetch('http://localhost:3000/api/usuarios');
       if (!response.ok) {
@@ -44,6 +58,7 @@ const Usuarios: React.FC = () => {
 
   const salvarUsuario = async (usuario: Usuario) => {
     setError(null);
+    setSuccess(null); // Reset success message
     try {
       let response;
       if (usuario.id) {
@@ -72,6 +87,7 @@ const Usuarios: React.FC = () => {
       await carregarUsuarios(); // Reload usuarios after save
       setMostrarForm(false);
       setUsuarioEditando(null);
+      setSuccess(`Usuário ${usuario.id ? 'atualizado' : 'criado'} com sucesso!`); // Set success message
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -87,6 +103,7 @@ const Usuarios: React.FC = () => {
       return;
     }
     setError(null);
+    setSuccess(null); // Reset success message
     try {
       const response = await fetch(`http://localhost:3000/api/usuarios/${id}`, {
         method: 'DELETE',
@@ -96,6 +113,7 @@ const Usuarios: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       await carregarUsuarios(); // Reload usuarios after delete
+      setSuccess("Usuário excluído com sucesso!"); // Set success message
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -110,12 +128,16 @@ const Usuarios: React.FC = () => {
     return <div className="text-center p-6">Carregando usuários...</div>;
   }
 
-  if (error) {
-    return <div className="text-center p-6 text-red-600">Erro: {error}</div>;
-  }
+  // Error display from the initial load should still show.
+  // The Alerta component will handle subsequent errors from save/delete.
 
   return (
     <div className="page-container p-6 bg-white shadow-md rounded-lg">
+      
+      {/* Display Alerta for success and error messages */}
+      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
+      {error && <Alerta message={error} onClose={() => setError(null)} />}
+
       <div className="page-header flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Gerenciar Usuários</h1>
         <button 

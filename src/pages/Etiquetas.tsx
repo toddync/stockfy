@@ -14,6 +14,23 @@ interface Cliente {
   nome: string;
 }
 
+import React, { useState, useEffect } from 'react';
+import Modal from '../components/Modal';
+import Alerta from '../components/Alerta'; // Import Alerta
+
+interface Etiqueta {
+  id?: number; // ID is optional for new entries
+  cliente_id: number;
+  codigo_vendedor?: string;
+  nome_vendedor?: string;
+  sobrenome?: string;
+}
+
+interface Cliente {
+  id: number;
+  nome: string;
+}
+
 const Etiquetas: React.FC = () => {
   const [etiquetas, setEtiquetas] = useState<Etiqueta[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -21,6 +38,7 @@ const Etiquetas: React.FC = () => {
   const [etiquetaEditando, setEtiquetaEditando] = useState<Etiqueta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); // Add success state
 
   useEffect(() => {
     carregarDados();
@@ -29,6 +47,7 @@ const Etiquetas: React.FC = () => {
   const carregarDados = async () => {
     setLoading(true);
     setError(null);
+    // Do not reset success here so message can persist after reload
     try {
       const [etiquetasResponse, clientesResponse] = await Promise.all([
         fetch('http://localhost:3000/api/etiquetas'),
@@ -61,6 +80,7 @@ const Etiquetas: React.FC = () => {
 
   const salvarEtiqueta = async (etiqueta: Etiqueta) => {
     setError(null);
+    setSuccess(null); // Reset success message
     try {
       let response;
       if (etiqueta.id) {
@@ -89,6 +109,7 @@ const Etiquetas: React.FC = () => {
       await carregarDados(); // Reload data after save
       setMostrarForm(false);
       setEtiquetaEditando(null);
+      setSuccess(`Etiqueta ${etiqueta.id ? 'atualizada' : 'criada'} com sucesso!`); // Set success message
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -104,6 +125,7 @@ const Etiquetas: React.FC = () => {
       return;
     }
     setError(null);
+    setSuccess(null); // Reset success message
     try {
       const response = await fetch(`http://localhost:3000/api/etiquetas/${id}`, {
         method: 'DELETE',
@@ -113,6 +135,7 @@ const Etiquetas: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       await carregarDados(); // Reload data after delete
+      setSuccess("Etiqueta excluída com sucesso!"); // Set success message
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -127,12 +150,16 @@ const Etiquetas: React.FC = () => {
     return <div className="text-center p-6">Carregando etiquetas...</div>;
   }
 
-  if (error) {
-    return <div className="text-center p-6 text-red-600">Erro: {error}</div>;
-  }
+  // Error display from the initial load should still show.
+  // The Alerta component will handle subsequent errors from save/delete.
 
   return (
     <div className="page-container p-6 bg-white shadow-md rounded-lg">
+      
+      {/* Display Alerta for success and error messages */}
+      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
+      {error && <Alerta message={error} onClose={() => setError(null)} />}
+
       <div className="page-header flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Gerenciar Etiquetas</h1>
         <button 

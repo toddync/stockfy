@@ -1,4 +1,4 @@
-import { Pool, RowDataPacket, ResultSetHeader } from 'mysql2/promise';
+import type { Pool, RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import Database from './database.js';
 
 interface CrudServiceOptions {

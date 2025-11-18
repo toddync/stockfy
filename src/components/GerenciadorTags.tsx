@@ -11,7 +11,7 @@ interface GerenciadorTagsProps {
   onTagsChange: (tags: Tag[]) => void;
 }
 
-const GerenciadorTags: React.FC<GerenciadorTagsProps> = ({ produtoId, initialTags, onTagsChange }) => {
+const GerenciadorTags: React.FC<GerenciadorTagsProps> = ({ produtoId: _produtoId, initialTags, onTagsChange }) => {
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [selectedTags, setSelectedTags] = useState<Tag[]>(initialTags);
   const [newTagName, setNewTagName] = useState('');

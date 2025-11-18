@@ -7,11 +7,9 @@ import ProdutoGrupos from './ProdutoGrupos';
 import Produtos from './Produtos';
 import Fornecedores from './Fornecedores';
 import Pedidos from './Pedidos';
-// import PedidoItens from './PedidoItens'; // Removed as it's integrated into DetalhesPedido
-import Compras from './Compras';
-import CompraItens from './CompraItens';
-import MovimentacoesEstoque from './MovimentacoesEstoque';
-import MovimentacaoItens from './MovimentacaoItens';
+import NovaCompraPage from './NovaCompraPage';
+import Devolucoes from './Devolucoes';
+import AjusteEstoquePage from './AjusteEstoquePage'; // NEW: Ajuste de Estoque
 import Rotas from './Rotas';
 import Solicitacoes from './Solicitacoes';
 import ContasFinanceiras from './ContasFinanceiras';
@@ -20,8 +18,8 @@ import Etiquetas from './Etiquetas';
 import Usuarios from './Usuarios';
 import Permissoes from './Permissoes';
 import UsuarioPermissoes from './UsuarioPermissoes';
-import DetalhesPedido from './DetalhesPedido'; // Add DetalhesPedido
-import NovoPedido from './NovoPedido'; // Add NovoPedido
+import DetalhesPedido from './DetalhesPedido';
+import NovoPedido from './NovoPedido';
 
 // Keep LoginPage explicitly if it's the initial entry
 import LoginPage from './LoginPage';
@@ -40,11 +38,9 @@ const pageConfigs: PageConfig[] = [
     { path: '/produtos', component: Produtos, name: 'Produtos' },
     { path: '/fornecedores', component: Fornecedores, name: 'Fornecedores' },
     { path: '/pedidos', component: Pedidos, name: 'Pedidos' },
-    // { path: '/pedido-itens', component: PedidoItens, name: 'Itens do Pedido' }, // Removed
-    { path: '/compras', component: Compras, name: 'Compras' },
-    { path: '/compra-itens', component: CompraItens, name: 'Itens da Compra' },
-    { path: '/movimentacoes-estoque', component: MovimentacoesEstoque, name: 'Movimentações de Estoque' },
-    { path: '/movimentacao-itens', component: MovimentacaoItens, name: 'Itens de Movimentação' },
+    { path: '/compras/nova', component: NovaCompraPage, name: 'Nova Compra' },
+    { path: '/devolucoes', component: Devolucoes, name: 'Devoluções' },
+    { path: '/ajuste-estoque', component: AjusteEstoquePage, name: 'Ajuste de Estoque' }, // NEW: Ajuste de Estoque
     { path: '/rotas', component: Rotas, name: 'Rotas' },
     { path: '/solicitacoes', component: Solicitacoes, name: 'Solicitações' },
     { path: '/contas-financeiras', component: ContasFinanceiras, name: 'Contas Financeiras' },
@@ -54,7 +50,7 @@ const pageConfigs: PageConfig[] = [
     { path: '/permissoes', component: Permissoes, name: 'Permissões' },
     { path: '/usuario-permissoes', component: UsuarioPermissoes, name: 'Permissões de Usuário' },
     { path: '/pedidos/novo', component: NovoPedido, name: 'Novo Pedido' },
-    { path: '/pedidos/:id', component: DetalhesPedido, name: 'Detalhes do Pedido' }, // Add DetalhesPedido
+    { path: '/pedidos/:id', component: DetalhesPedido, name: 'Detalhes do Pedido' },
 ];
 
 export default pageConfigs;

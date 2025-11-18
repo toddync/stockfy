@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
+import Alerta from '../components/Alerta';
 
 interface ProdutoGrupo {
   id?: number; // ID is optional for new entries
@@ -13,6 +14,7 @@ const ProdutoGrupos: React.FC = () => {
   const [grupoEditando, setGrupoEditando] = useState<ProdutoGrupo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     carregarGrupos();
@@ -20,9 +22,9 @@ const ProdutoGrupos: React.FC = () => {
 
   const carregarGrupos = async () => {
     setLoading(true);
-    setError(null);
+    // Do not reset success/error here
     try {
-      const response = await fetch('http://localhost:3000/api/produto_grupos');
+      const response = await fetch('http://localhost:3000/api/produto-grupos');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -42,11 +44,12 @@ const ProdutoGrupos: React.FC = () => {
 
   const salvarGrupo = async (grupo: ProdutoGrupo) => {
     setError(null);
+    setSuccess(null);
     try {
       let response;
       if (grupo.id) {
         // Update existing grupo
-        response = await fetch(`http://localhost:3000/api/produto_grupos/${grupo.id}`, {
+        response = await fetch(`http://localhost:3000/api/produto-grupos/${grupo.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -55,7 +58,7 @@ const ProdutoGrupos: React.FC = () => {
         });
       } else {
         // Create new grupo
-        response = await fetch('http://localhost:3000/api/produto_grupos', {
+        response = await fetch('http://localhost:3000/api/produto-grupos', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -70,6 +73,7 @@ const ProdutoGrupos: React.FC = () => {
       await carregarGrupos(); // Reload groups after save
       setMostrarForm(false);
       setGrupoEditando(null);
+      setSuccess(`Grupo ${grupo.id ? 'atualizado' : 'criado'} com sucesso!`);
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -85,8 +89,9 @@ const ProdutoGrupos: React.FC = () => {
       return;
     }
     setError(null);
+    setSuccess(null);
     try {
-      const response = await fetch(`http://localhost:3000/api/produto_grupos/${id}`, {
+      const response = await fetch(`http://localhost:3000/api/produto-grupos/${id}`, {
         method: 'DELETE',
       });
 
@@ -94,6 +99,7 @@ const ProdutoGrupos: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       await carregarGrupos(); // Reload groups after delete
+      setSuccess("Grupo excluído com sucesso!");
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -104,16 +110,16 @@ const ProdutoGrupos: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading && grupos.length === 0) {
     return <div className="text-center p-6">Carregando grupos de produtos...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center p-6 text-red-600">Erro: {error}</div>;
   }
 
   return (
     <div className="page-container p-6 bg-white shadow-md rounded-lg">
+      
+      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
+      {error && <Alerta message={error} onClose={() => setError(null)} />}
+
       <div className="page-header flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Gerenciar Grupos de Produtos</h1>
         <button 

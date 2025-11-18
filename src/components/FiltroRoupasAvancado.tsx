@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface FiltroRoupasAvancadoProps {
   onFilterChange: (filters: any) => void;
@@ -12,13 +12,19 @@ const FiltroRoupasAvancado: React.FC<FiltroRoupasAvancadoProps> = ({ onFilterCha
   const [material, setMaterial] = useState('');
   const [temporada, setTemporada] = useState('');
 
+  const isInitialMount = useRef(true);
+
   useEffect(() => {
-    // Debounce filter changes to avoid excessive re-renders/API calls
+    if (isInitialMount.current) {
+        isInitialMount.current = false;
+        return;
+    }
+
     const handler = setTimeout(() => {
       onFilterChange({ tamanho, cor, genero, faixaEtaria, material, temporada });
     }, 500);
     return () => clearTimeout(handler);
-  }, [tamanho, cor, genero, faixaEtaria, material, temporada, onFilterChange]);
+  }, [tamanho, cor, genero, faixaEtaria, material, temporada]);
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">

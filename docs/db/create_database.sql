@@ -64,6 +64,11 @@ CREATE TABLE `fornecedores` (
   `ativo` BOOLEAN DEFAULT TRUE
 ) ENGINE=InnoDB;
 
+CREATE TABLE `tags` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `nome` VARCHAR(50) UNIQUE NOT NULL
+) ENGINE=InnoDB;
+
 -- Now create tables that depend on the above tables
 CREATE TABLE `clientes` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -101,11 +106,28 @@ CREATE TABLE `produtos` (
   `grupo_id` INT NOT NULL,
   `preco_custo` DECIMAL(12, 2),
   `preco_venda` DECIMAL(12, 2),
-  `estoque_atual` DECIMAL(10, 2) DEFAULT 0,
   `tabela_preco` VARCHAR(10),
   `preco_minimo` DECIMAL(12, 2),
   `data_atualizacao` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`grupo_id`) REFERENCES `produto_grupos`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE `produto_variacoes` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `produto_id` INT NOT NULL,
+    `sku` VARCHAR(50) UNIQUE,
+    `tamanho` VARCHAR(20),
+    `cor` VARCHAR(50),
+    `estoque_atual` DECIMAL(10, 2) DEFAULT 0,
+    FOREIGN KEY (`produto_id`) REFERENCES `produtos`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE `produto_tags` (
+    `produto_id` INT NOT NULL,
+    `tag_id` INT NOT NULL,
+    PRIMARY KEY (`produto_id`, `tag_id`),
+    FOREIGN KEY (`produto_id`) REFERENCES `produtos`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`tag_id`) REFERENCES `tags`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Create tables that depend on clientes, vendedores, produtos
@@ -211,40 +233,40 @@ CREATE TABLE `pedido_itens` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `pedido_id` INT NOT NULL,
   `produto_id` INT NOT NULL,
+  `variacao_id` INT,
   `quantidade_saida` INT NOT NULL DEFAULT 0,
   `quantidade_retorno` INT NOT NULL DEFAULT 0,
   `preco_custo` DECIMAL(12, 2),
   `preco_venda` DECIMAL(12, 2) NOT NULL,
-  `tamanho` VARCHAR(10),
-  `cor` VARCHAR(30),
   FOREIGN KEY (`pedido_id`) REFERENCES `pedidos`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`produto_id`) REFERENCES `produtos`(`id`) ON DELETE CASCADE
+  FOREIGN KEY (`produto_id`) REFERENCES `produtos`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`variacao_id`) REFERENCES `produto_variacoes`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE `compra_itens` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `compra_id` INT NOT NULL,
   `produto_id` INT NOT NULL,
+  `variacao_id` INT,
   `quantidade` INT NOT NULL,
   `preco_compra` DECIMAL(12, 2) NOT NULL,
   `desconto` DECIMAL(12, 2),
   `valor_total` DECIMAL(12, 2) NOT NULL,
-  `tamanho` VARCHAR(10),
-  `cor` VARCHAR(30),
   FOREIGN KEY (`compra_id`) REFERENCES `compras`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`produto_id`) REFERENCES `produtos`(`id`) ON DELETE CASCADE
+  FOREIGN KEY (`produto_id`) REFERENCES `produtos`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`variacao_id`) REFERENCES `produto_variacoes`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE `movimentacao_itens` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `movimentacao_id` INT NOT NULL,
   `produto_id` INT NOT NULL,
+  `variacao_id` INT,
   `quantidade` INT NOT NULL,
   `preco_custo` DECIMAL(12, 2),
-  `tamanho` VARCHAR(10),
-  `cor` VARCHAR(30),
   FOREIGN KEY (`movimentacao_id`) REFERENCES `movimentacoes_estoque`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`produto_id`) REFERENCES `produtos`(`id`) ON DELETE CASCADE
+  FOREIGN KEY (`produto_id`) REFERENCES `produtos`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`variacao_id`) REFERENCES `produto_variacoes`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- Create remaining tables
@@ -304,6 +326,17 @@ CREATE INDEX idx_produtos_grupo ON `produtos`(`grupo_id`);
 CREATE INDEX idx_produtos_codigo ON `produtos`(`codigo`);
 CREATE INDEX idx_produtos_preco_venda ON `produtos`(`preco_venda`);
 
+-- Indexes for produto_variacoes
+CREATE INDEX idx_variacoes_produto ON `produto_variacoes`(`produto_id`);
+CREATE INDEX idx_variacoes_sku ON `produto_variacoes`(`sku`);
+
+-- Indexes for tags
+CREATE INDEX idx_tags_nome ON `tags`(`nome`);
+
+-- Indexes for produto_tags
+CREATE INDEX idx_produto_tags_produto ON `produto_tags`(`produto_id`);
+CREATE INDEX idx_produto_tags_tag ON `produto_tags`(`tag_id`);
+
 -- Indexes for pedidos
 CREATE INDEX idx_pedidos_data ON `pedidos`(`data_pedido`);
 CREATE INDEX idx_pedidos_cliente ON `pedidos`(`cliente_id`);
@@ -330,10 +363,14 @@ CREATE INDEX idx_movimentacoes_cliente ON `movimentacoes_estoque`(`cliente_id`);
 -- Indexes for junction tables
 CREATE INDEX idx_pedido_itens_pedido ON `pedido_itens`(`pedido_id`);
 CREATE INDEX idx_pedido_itens_produto ON `pedido_itens`(`produto_id`);
+CREATE INDEX idx_pedido_itens_variacao ON `pedido_itens`(`variacao_id`);
 CREATE INDEX idx_compra_itens_compra ON `compra_itens`(`compra_id`);
 CREATE INDEX idx_compra_itens_produto ON `compra_itens`(`produto_id`);
+CREATE INDEX idx_compra_itens_variacao ON `compra_itens`(`variacao_id`);
 CREATE INDEX idx_movimentacao_itens_mov ON `movimentacao_itens`(`movimentacao_id`);
 CREATE INDEX idx_movimentacao_itens_produto ON `movimentacao_itens`(`produto_id`);
+CREATE INDEX idx_movimentacao_itens_variacao ON `movimentacao_itens`(`variacao_id`);
+
 
 -- =============================================
 -- INSERT SAMPLE DATA (OPTIONAL)
@@ -368,11 +405,25 @@ INSERT INTO `clientes` (`nome`, `cpf_cnpj`, `telefone`, `email`, `cidade`, `esta
 ('Cliente B', '222.333.444-55', '(11) 6666-5555', 'clienteb@email.com', 'São Paulo', 'SP', 2, TRUE);
 
 -- Insert sample produtos
-INSERT INTO `produtos` (`codigo`, `descricao`, `grupo_id`, `preco_custo`, `preco_venda`, `estoque_atual`) VALUES
-('P001', 'Camiseta Básica Branca', 1, 15.00, 29.90, 100),
-('P002', 'Calça Jeans Slim', 2, 45.00, 89.90, 50),
-('P003', 'Vestido Floral', 3, 35.00, 79.90, 30),
-('P004', 'Bolsa Couro', 4, 60.00, 129.90, 20);
+INSERT INTO `produtos` (`codigo`, `descricao`, `grupo_id`, `preco_custo`, `preco_venda`) VALUES
+('P001', 'Camiseta Básica Branca', 1, 15.00, 29.90),
+('P002', 'Calça Jeans Slim', 2, 45.00, 89.90),
+('P003', 'Vestido Floral', 3, 35.00, 79.90),
+('P004', 'Bolsa Couro', 4, 60.00, 129.90);
+
+-- Insert sample tags
+INSERT INTO `tags` (`nome`) VALUES ('Promoção'), ('Novo'), ('Verão'), ('Inverno');
+
+-- Insert sample produto_variacoes
+INSERT INTO `produto_variacoes` (`produto_id`, `sku`, `tamanho`, `cor`, `estoque_atual`) VALUES
+(1, 'P001-BR-P', 'P', 'Branca', 50),
+(1, 'P001-BR-M', 'M', 'Branca', 50),
+(2, 'P002-JE-38', '38', 'Jeans Claro', 25),
+(2, 'P002-JE-40', '40', 'Jeans Claro', 25);
+
+-- Insert sample produto_tags
+INSERT INTO `produto_tags` (`produto_id`, `tag_id`) VALUES (1, 2), (1, 3), (2, 3), (3, 1);
+
 
 -- Insert sample usuario and permissions
 INSERT INTO `usuarios` (`nome`, `senha_hash`, `ativo`) VALUES

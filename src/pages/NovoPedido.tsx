@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Alerta from '../components/Alerta'; // Import Alerta
 
 interface Pedido {
   id?: number;
@@ -34,12 +35,14 @@ const NovoPedido: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); // Add success state
   const navigate = useNavigate();
 
   useEffect(() => {
     const carregarDados = async () => {
       setLoading(true);
       setError(null);
+      // Do not reset success here so message can persist after reload
       try {
         const [clientesResponse, vendedoresResponse] = await Promise.all([
           fetch('http://localhost:3000/api/clientes'),
@@ -76,6 +79,7 @@ const NovoPedido: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null); // Reset success message
 
     try {
       const response = await fetch('http://localhost:3000/api/pedidos', {
@@ -91,7 +95,11 @@ const NovoPedido: React.FC = () => {
       }
 
       const novoPedido = await response.json();
-      navigate(`/pedidos/${novoPedido.id}`);
+      setSuccess(`Pedido ${novoPedido.id} criado com sucesso! Redirecionando...`); // Set success message
+      setTimeout(() => {
+        navigate(`/pedidos/${novoPedido.id}`);
+      }, 1500); // Redirect after 1.5 seconds
+      
     } catch (e: unknown) {
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -106,12 +114,15 @@ const NovoPedido: React.FC = () => {
     return <div className="text-center p-6">Carregando...</div>;
   }
 
-  if (error) {
-    return <div className="text-center p-6 text-red-600">Erro: {error}</div>;
-  }
+  // Error display from the initial load should still show.
+  // The Alerta component will handle subsequent errors from form submission.
 
   return (
     <div className="page-container p-6 bg-white shadow-md rounded-lg">
+      {/* Display Alerta for success and error messages */}
+      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
+      {error && <Alerta message={error} onClose={() => setError(null)} />}
+
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Novo Pedido</h1>
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

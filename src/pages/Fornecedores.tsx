@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
+import Alerta from '../components/Alerta';
 
 interface Fornecedor {
   id?: number; // ID is optional for new entries
@@ -26,6 +27,7 @@ const Fornecedores: React.FC = () => {
   const [fornecedorEditando, setFornecedorEditando] = useState<Fornecedor | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     carregarFornecedores();
@@ -33,7 +35,7 @@ const Fornecedores: React.FC = () => {
 
   const carregarFornecedores = async () => {
     setLoading(true);
-    setError(null);
+    // Do not reset error/success
     try {
       const response = await fetch('http://localhost:3000/api/fornecedores');
       if (!response.ok) {
@@ -55,6 +57,7 @@ const Fornecedores: React.FC = () => {
 
   const salvarFornecedor = async (fornecedor: Fornecedor) => {
     setError(null);
+    setSuccess(null);
     try {
       let response;
       if (fornecedor.id) {
@@ -83,6 +86,7 @@ const Fornecedores: React.FC = () => {
       await carregarFornecedores(); // Reload fornecedores after save
       setMostrarForm(false);
       setFornecedorEditando(null);
+      setSuccess(`Fornecedor ${fornecedor.id ? 'atualizado' : 'criado'} com sucesso!`);
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -98,6 +102,7 @@ const Fornecedores: React.FC = () => {
       return;
     }
     setError(null);
+    setSuccess(null);
     try {
       const response = await fetch(`http://localhost:3000/api/fornecedores/${id}`, {
         method: 'DELETE',
@@ -107,6 +112,7 @@ const Fornecedores: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       await carregarFornecedores(); // Reload fornecedores after delete
+      setSuccess("Fornecedor excluído com sucesso!");
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -117,16 +123,16 @@ const Fornecedores: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading && fornecedores.length === 0) {
     return <div className="text-center p-6">Carregando fornecedores...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center p-6 text-red-600">Erro: {error}</div>;
   }
 
   return (
     <div className="page-container p-6 bg-white shadow-md rounded-lg">
+      
+      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
+      {error && <Alerta message={error} onClose={() => setError(null)} />}
+
       <div className="page-header flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Gerenciar Fornecedores</h1>
         <button 
@@ -236,7 +242,7 @@ const FornecedorForm: React.FC<{
         </div>
 
         <div className="mb-4">
-          <label htmlFor="tipo_pessoa" className="block text-gray-700 text-sm font-bold mb-2">Tipo Pessoa:</label>
+          <label htmlFor="tipo_pessoa" className="block text-gray-700 text-sm font-bold mb-2">Tipo de Pessoa:</label>
           <select
             id="tipo_pessoa"
             value={formData.tipo_pessoa}
@@ -372,11 +378,11 @@ const FornecedorForm: React.FC<{
         </div>
 
         <div className="mb-4">
-          <label htmlFor="telefone_responsavel" className="block text-gray-700 text-sm font-bold mb-2">Telefone Responsável:</label>
+          <label htmlFor="telefone_responsavel" className="block text-gray-700 text-sm font-bold mb-2">Telefone do Responsável:</label>
           <input
             type="text"
             id="telefone_responsavel"
-            placeholder="Telefone Responsável"
+            placeholder="Telefone do Responsável"
             value={formData.telefone_responsavel || ''}
             onChange={e => setFormData({...formData, telefone_responsavel: e.target.value})}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"

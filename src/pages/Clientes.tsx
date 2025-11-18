@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
+import Alerta from '../components/Alerta';
 
 interface Cliente {
   id?: number; // ID is optional for new clients
@@ -35,6 +36,7 @@ const Clientes: React.FC = () => {
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     carregarClientes();
@@ -42,7 +44,7 @@ const Clientes: React.FC = () => {
 
   const carregarClientes = async () => {
     setLoading(true);
-    setError(null);
+    // Do not reset success/error here so the message can persist after reload
     try {
       const response = await fetch('http://localhost:3000/api/clientes');
       if (!response.ok) {
@@ -64,6 +66,7 @@ const Clientes: React.FC = () => {
 
   const salvarCliente = async (cliente: Cliente) => {
     setError(null);
+    setSuccess(null);
     try {
       let response;
       if (cliente.id) {
@@ -92,6 +95,7 @@ const Clientes: React.FC = () => {
       await carregarClientes(); // Reload clients after save
       setMostrarForm(false);
       setClienteEditando(null);
+      setSuccess(`Cliente ${cliente.id ? 'atualizado' : 'criado'} com sucesso!`);
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -107,6 +111,7 @@ const Clientes: React.FC = () => {
       return;
     }
     setError(null);
+    setSuccess(null);
     try {
       const response = await fetch(`http://localhost:3000/api/clientes/${id}`, {
         method: 'DELETE',
@@ -116,6 +121,7 @@ const Clientes: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       await carregarClientes(); // Reload clients after delete
+      setSuccess("Cliente excluído com sucesso!");
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -126,16 +132,16 @@ const Clientes: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading && clientes.length === 0) {
     return <div className="text-center p-6">Carregando clientes...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center p-6 text-red-600">Erro: {error}</div>;
   }
 
   return (
     <div className="page-container p-6 bg-white shadow-md rounded-lg">
+      
+      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
+      {error && <Alerta message={error} onClose={() => setError(null)} />}
+
       <div className="page-header flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Gerenciar Clientes</h1>
         <button 
@@ -230,7 +236,7 @@ const ClienteForm: React.FC<{
       </div>
       
       <div className="mb-4">
-        <label htmlFor="cpf_cnpj" className="block text-gray-700 text-sm font-bold mb-2">CPF/CNPJ:</label>
+        <label htmlFor="cpf_cnpj" className="block text-gray-700 text-sm font-bold mb-2">CPF ou CNPJ:</label>
         <input
           type="text"
           id="cpf_cnpj"

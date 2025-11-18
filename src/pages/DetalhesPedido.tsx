@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import FormularioItemPedido from '../components/FormularioItemPedido';
+import Alerta from '../components/Alerta'; // Import Alerta
 
 interface ItemPedido {
   id: number;
@@ -30,6 +31,7 @@ const DetalhesPedido: React.FC = () => {
   const [editandoItem, setEditandoItem] = useState<ItemPedido | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); // Add success state
 
   useEffect(() => {
     if (pedidoId) {
@@ -40,6 +42,7 @@ const DetalhesPedido: React.FC = () => {
   const carregarPedido = async () => {
     setLoading(true);
     setError(null);
+    // Do not reset success here so message can persist after reload
     try {
       const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoId}/detalhes`); // New endpoint for detailed order
       if (!response.ok) {
@@ -59,59 +62,12 @@ const DetalhesPedido: React.FC = () => {
     }
   };
 
-  const adicionarItem = async (novoItem: Omit<ItemPedido, 'id' | 'valor_total' | 'produto_descricao' | 'produto_codigo'>) => {
-    setError(null);
-    try {
-      const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoId}/itens`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(novoItem)
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      carregarPedido();
-    } catch (e: unknown) {
-      let message = "Erro desconhecido";
-      if (e instanceof Error) {
-        message = e.message;
-      }
-      setError(`Falha ao adicionar item: ${message}`);
-      console.error("Erro ao adicionar item:", e);
-    }
-  };
-
-  const atualizarItem = async (itemAtualizado: ItemPedido) => {
-    setError(null);
-    try {
-      const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoId}/itens/${itemAtualizado.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(itemAtualizado)
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      carregarPedido();
-    } catch (e: unknown) {
-      let message = "Erro desconhecido";
-      if (e instanceof Error) {
-        message = e.message;
-      }
-      setError(`Falha ao atualizar item: ${message}`);
-      console.error("Erro ao atualizar item:", e);
-    }
-  };
-
   const removerItem = async (itemId: number) => {
     if (!window.confirm('Confirmar exclusão do item?')) {
       return;
     }
     setError(null);
+    setSuccess(null); // Reset success message
     try {
       const response = await fetch(`http://localhost:3000/api/pedidos/${pedidoId}/itens/${itemId}`, {
         method: 'DELETE'
@@ -120,6 +76,7 @@ const DetalhesPedido: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       carregarPedido();
+      setSuccess("Item do pedido excluído com sucesso!"); // Set success message
     } catch (e: unknown) {
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -134,9 +91,8 @@ const DetalhesPedido: React.FC = () => {
     return <div className="text-center p-6">Carregando detalhes do pedido...</div>;
   }
 
-  if (error) {
-    return <div className="text-center p-6 text-red-600">Erro: {error}</div>;
-  }
+  // Error display from the initial load should still show.
+  // The Alerta component will handle subsequent errors from save/delete.
 
   if (!pedido) {
     return <div className="text-center p-6">Pedido não encontrado.</div>;
@@ -144,6 +100,10 @@ const DetalhesPedido: React.FC = () => {
 
   return (
     <div className="page-container p-6 bg-gray-50 min-h-screen">
+      {/* Display Alerta for success and error messages */}
+      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
+      {error && <Alerta message={error} onClose={() => setError(null)} />}
+
       <div className="detalhes-pedido bg-white shadow-md rounded-lg p-6">
         {/* Cabeçalho do Pedido */}
         <div className="pedido-header border-b pb-4 mb-4 flex justify-between items-center">

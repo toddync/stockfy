@@ -25,6 +25,7 @@ const UsuarioPermissoes: React.FC = () => {
   const [usuarioPermissaoEditando, setUsuarioPermissaoEditando] = useState<UsuarioPermissao | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); // Add success state
 
   useEffect(() => {
     carregarDados();
@@ -33,6 +34,7 @@ const UsuarioPermissoes: React.FC = () => {
   const carregarDados = async () => {
     setLoading(true);
     setError(null);
+    // Do not reset success here so message can persist after reload
     try {
       const [usuarioPermissoesResponse, usuariosResponse, permissoesResponse] = await Promise.all([
         fetch('http://localhost:3000/api/usuario_permissoes'),
@@ -71,6 +73,7 @@ const UsuarioPermissoes: React.FC = () => {
 
   const salvarUsuarioPermissao = async (up: UsuarioPermissao) => {
     setError(null);
+    setSuccess(null); // Reset success message
     try {
       // Check if the association already exists in the current state
       const existsLocally = usuarioPermissoes.some(
@@ -78,7 +81,7 @@ const UsuarioPermissoes: React.FC = () => {
       );
 
       if (existsLocally) {
-        alert('Esta associação de usuário e permissão já existe.');
+        setSuccess('Esta associação de usuário e permissão já existe.'); // Use success for this
         setMostrarForm(false);
         setUsuarioPermissaoEditando(null);
         return;
@@ -102,6 +105,7 @@ const UsuarioPermissoes: React.FC = () => {
       await carregarDados(); // Reload data after save
       setMostrarForm(false);
       setUsuarioPermissaoEditando(null);
+      setSuccess('Associação criada com sucesso!'); // Set success message
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -117,6 +121,7 @@ const UsuarioPermissoes: React.FC = () => {
       return;
     }
     setError(null);
+    setSuccess(null); // Reset success message
     try {
       // For composite keys, we need to send both parts of the key for deletion.
       // The generic CRUD service might need to be adapted to handle this,
@@ -134,6 +139,7 @@ const UsuarioPermissoes: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       await carregarDados(); // Reload data after delete
+      setSuccess("Associação excluída com sucesso!"); // Set success message
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -148,12 +154,16 @@ const UsuarioPermissoes: React.FC = () => {
     return <div className="text-center p-6">Carregando permissões de usuário...</div>;
   }
 
-  if (error) {
-    return <div className="text-center p-6 text-red-600">Erro: {error}</div>;
-  }
+  // Error display from the initial load should still show.
+  // The Alerta component will handle subsequent errors from save/delete.
 
   return (
     <div className="page-container p-6 bg-white shadow-md rounded-lg">
+      
+      {/* Display Alerta for success and error messages */}
+      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
+      {error && <Alerta message={error} onClose={() => setError(null)} />}
+
       <div className="page-header flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Gerenciar Permissões de Usuário</h1>
         <button 

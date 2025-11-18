@@ -60,7 +60,7 @@ const TimelinePedido: React.FC<TimelinePedidoProps> = ({ pedidoId }) => {
     <div className="bg-white p-6 rounded-lg shadow-md mt-6">
       <h2 className="text-xl font-semibold text-gray-800 mb-4">Timeline do Pedido #{pedidoId}</h2>
       <div className="relative border-l-4 border-blue-500 ml-4 pl-4">
-        {eventos.map((evento, index) => (
+        {eventos.map((evento, _index) => (
           <div key={evento.id} className="mb-8 flex items-start">
             <div className="absolute w-4 h-4 bg-blue-500 rounded-full -left-2 mt-1" />
             <div className="ml-6">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
+import Alerta from '../components/Alerta';
 
 interface Solicitacao {
   id?: number; // ID is optional for new entries
@@ -28,6 +29,7 @@ const Solicitacoes: React.FC = () => {
   const [solicitacaoEditando, setSolicitacaoEditando] = useState<Solicitacao | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); // Add success state
 
   useEffect(() => {
     carregarDados();
@@ -36,6 +38,7 @@ const Solicitacoes: React.FC = () => {
   const carregarDados = async () => {
     setLoading(true);
     setError(null);
+    // Do not reset success here so message can persist after reload
     try {
       const [solicitacoesResponse, vendedoresResponse, clientesResponse] = await Promise.all([
         fetch('http://localhost:3000/api/solicitacoes'),
@@ -74,6 +77,7 @@ const Solicitacoes: React.FC = () => {
 
   const salvarSolicitacao = async (solicitacao: Solicitacao) => {
     setError(null);
+    setSuccess(null); // Reset success message
     try {
       let response;
       if (solicitacao.id) {
@@ -102,6 +106,7 @@ const Solicitacoes: React.FC = () => {
       await carregarDados(); // Reload data after save
       setMostrarForm(false);
       setSolicitacaoEditando(null);
+      setSuccess(`Solicitação ${solicitacao.id ? 'atualizada' : 'criada'} com sucesso!`); // Set success message
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -117,6 +122,7 @@ const Solicitacoes: React.FC = () => {
       return;
     }
     setError(null);
+    setSuccess(null); // Reset success message
     try {
       const response = await fetch(`http://localhost:3000/api/solicitacoes/${id}`, {
         method: 'DELETE',
@@ -126,6 +132,7 @@ const Solicitacoes: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       await carregarDados(); // Reload data after delete
+      setSuccess("Solicitação excluída com sucesso!"); // Set success message
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -140,12 +147,16 @@ const Solicitacoes: React.FC = () => {
     return <div className="text-center p-6">Carregando solicitações...</div>;
   }
 
-  if (error) {
-    return <div className="text-center p-6 text-red-600">Erro: {error}</div>;
-  }
+  // Error display from the initial load should still show.
+  // The Alerta component will handle subsequent errors from save/delete.
 
   return (
     <div className="page-container p-6 bg-white shadow-md rounded-lg">
+      
+      {/* Display Alerta for success and error messages */}
+      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
+      {error && <Alerta message={error} onClose={() => setError(null)} />}
+
       <div className="page-header flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Gerenciar Solicitações</h1>
         <button 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
+import Alerta from '../components/Alerta';
 
 interface Residuo {
   id?: number; // ID is optional for new entries
@@ -15,6 +16,7 @@ const Residuos: React.FC = () => {
   const [residuoEditando, setResiduoEditando] = useState<Residuo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); // Add success state
 
   useEffect(() => {
     carregarResiduos();
@@ -23,6 +25,7 @@ const Residuos: React.FC = () => {
   const carregarResiduos = async () => {
     setLoading(true);
     setError(null);
+    // Do not reset success here so message can persist after reload
     try {
       const response = await fetch('http://localhost:3000/api/residuos');
       if (!response.ok) {
@@ -44,6 +47,7 @@ const Residuos: React.FC = () => {
 
   const salvarResiduo = async (residuo: Residuo) => {
     setError(null);
+    setSuccess(null); // Reset success message
     try {
       let response;
       if (residuo.id) {
@@ -72,6 +76,7 @@ const Residuos: React.FC = () => {
       await carregarResiduos(); // Reload residuos after save
       setMostrarForm(false);
       setResiduoEditando(null);
+      setSuccess(`Resíduo ${residuo.id ? 'atualizado' : 'criado'} com sucesso!`); // Set success message
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -87,6 +92,7 @@ const Residuos: React.FC = () => {
       return;
     }
     setError(null);
+    setSuccess(null); // Reset success message
     try {
       const response = await fetch(`http://localhost:3000/api/residuos/${id}`, {
         method: 'DELETE',
@@ -96,6 +102,7 @@ const Residuos: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       await carregarResiduos(); // Reload residuos after delete
+      setSuccess("Resíduo excluído com sucesso!"); // Set success message
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -110,12 +117,16 @@ const Residuos: React.FC = () => {
     return <div className="text-center p-6">Carregando resíduos...</div>;
   }
 
-  if (error) {
-    return <div className="text-center p-6 text-red-600">Erro: {error}</div>;
-  }
+  // Error display from the initial load should still show.
+  // The Alerta component will handle subsequent errors from save/delete.
 
   return (
     <div className="page-container p-6 bg-white shadow-md rounded-lg">
+      
+      {/* Display Alerta for success and error messages */}
+      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
+      {error && <Alerta message={error} onClose={() => setError(null)} />}
+
       <div className="page-header flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Gerenciar Resíduos</h1>
         <button 

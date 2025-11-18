@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
+import TagInput from '../components/TagInput'; // Import the new component
+import Alerta from '../components/Alerta';
 
 interface Vendedor {
   id?: number; // ID is optional for new entries
@@ -24,6 +26,7 @@ const Vendedores: React.FC = () => {
   const [vendedorEditando, setVendedorEditando] = useState<Vendedor | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     carregarVendedores();
@@ -31,7 +34,7 @@ const Vendedores: React.FC = () => {
 
   const carregarVendedores = async () => {
     setLoading(true);
-    setError(null);
+    // Do not reset success/error here
     try {
       const response = await fetch('http://localhost:3000/api/vendedores');
       if (!response.ok) {
@@ -53,6 +56,7 @@ const Vendedores: React.FC = () => {
 
   const salvarVendedor = async (vendedor: Vendedor) => {
     setError(null);
+    setSuccess(null);
     try {
       let response;
       if (vendedor.id) {
@@ -81,6 +85,7 @@ const Vendedores: React.FC = () => {
       await carregarVendedores(); // Reload vendedores after save
       setMostrarForm(false);
       setVendedorEditando(null);
+      setSuccess(`Vendedor ${vendedor.id ? 'atualizado' : 'criado'} com sucesso!`);
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -96,6 +101,7 @@ const Vendedores: React.FC = () => {
       return;
     }
     setError(null);
+    setSuccess(null);
     try {
       const response = await fetch(`http://localhost:3000/api/vendedores/${id}`, {
         method: 'DELETE',
@@ -105,6 +111,7 @@ const Vendedores: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       await carregarVendedores(); // Reload vendedores after delete
+      setSuccess("Vendedor excluído com sucesso!");
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -115,16 +122,16 @@ const Vendedores: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading && vendedores.length === 0) {
     return <div className="text-center p-6">Carregando vendedores...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center p-6 text-red-600">Erro: {error}</div>;
   }
 
   return (
     <div className="page-container p-6 bg-white shadow-md rounded-lg">
+      
+      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
+      {error && <Alerta message={error} onClose={() => setError(null)} />}
+
       <div className="page-header flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Gerenciar Vendedores</h1>
         <button 
@@ -193,8 +200,22 @@ const VendedorForm: React.FC<{
   onCancel: () => void 
 }> = ({ vendedor, onSave, onCancel }) => {
   const [formData, setFormData] = useState<Vendedor>(vendedor || {
-    codigo: '', nome: '', cpf: '', rg: '', endereco: '', bairro: '', cidade: '', estado: '', cep: '', telefone: '', email: '', pracas_atendimento: ''
+    codigo: '', nome: '', cpf: '', rg: '', endereco: '', bairro: '', cidade: '', estado: '', cep: '', telefone: '', email: '', pracas_atendimento: '[]'
   });
+
+  // Safely parse the pracas_atendimento JSON string
+  const getPracasAsArray = () => {
+    try {
+      const pracas = JSON.parse(formData.pracas_atendimento || '[]');
+      return Array.isArray(pracas) ? pracas : [];
+    } catch (e) {
+      return []; // Return empty array if JSON is invalid
+    }
+  };
+
+  const handlePracasChange = (newPracas: string[]) => {
+    setFormData({ ...formData, pracas_atendimento: JSON.stringify(newPracas) });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -341,15 +362,12 @@ const VendedorForm: React.FC<{
           />
         </div>
 
-        <div className="mb-4">
-          <label htmlFor="pracas_atendimento" className="block text-gray-700 text-sm font-bold mb-2">Praças de Atendimento (JSON):</label>
-          <textarea
-            id="pracas_atendimento"
-            placeholder="Ex: [\&quot;Centro\&quot;, \&quot;Zona Sul\&quot;]"
-            value={formData.pracas_atendimento || ''}
-            onChange={e => setFormData({...formData, pracas_atendimento: e.target.value})}
-            rows={3}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        <div className="mb-4 md:col-span-2">
+          <label htmlFor="pracas_atendimento" className="block text-gray-700 text-sm font-bold mb-2">Praças de Atendimento:</label>
+          <TagInput 
+            tags={getPracasAsArray()} 
+            onTagsChange={handlePracasChange}
+            placeholder="Adicione uma praça e pressione Enter"
           />
         </div>
       </div>

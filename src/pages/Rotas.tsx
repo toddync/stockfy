@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
+import Alerta from '../components/Alerta'; // Import Alerta
 
 interface Rota {
   id?: number; // ID is optional for new entries
@@ -14,6 +15,7 @@ const Rotas: React.FC = () => {
   const [rotaEditando, setRotaEditando] = useState<Rota | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); // Add success state
 
   useEffect(() => {
     carregarRotas();
@@ -22,6 +24,7 @@ const Rotas: React.FC = () => {
   const carregarRotas = async () => {
     setLoading(true);
     setError(null);
+    // Do not reset success here so message can persist after reload
     try {
       const response = await fetch('http://localhost:3000/api/rotas');
       if (!response.ok) {
@@ -43,6 +46,7 @@ const Rotas: React.FC = () => {
 
   const salvarRota = async (rota: Rota) => {
     setError(null);
+    setSuccess(null); // Reset success message
     try {
       let response;
       if (rota.id) {
@@ -71,6 +75,7 @@ const Rotas: React.FC = () => {
       await carregarRotas(); // Reload rotas after save
       setMostrarForm(false);
       setRotaEditando(null);
+      setSuccess(`Rota ${rota.id ? 'atualizada' : 'criada'} com sucesso!`); // Set success message
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -86,6 +91,7 @@ const Rotas: React.FC = () => {
       return;
     }
     setError(null);
+    setSuccess(null); // Reset success message
     try {
       const response = await fetch(`http://localhost:3000/api/rotas/${id}`, {
         method: 'DELETE',
@@ -95,6 +101,7 @@ const Rotas: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       await carregarRotas(); // Reload rotas after delete
+      setSuccess("Rota excluída com sucesso!"); // Set success message
     } catch (e: unknown) { // Changed from any to unknown
       let message = "Erro desconhecido";
       if (e instanceof Error) {
@@ -109,12 +116,16 @@ const Rotas: React.FC = () => {
     return <div className="text-center p-6">Carregando rotas...</div>;
   }
 
-  if (error) {
-    return <div className="text-center p-6 text-red-600">Erro: {error}</div>;
-  }
+  // Error display from the initial load should still show.
+  // The Alerta component will handle subsequent errors from save/delete.
 
   return (
     <div className="page-container p-6 bg-white shadow-md rounded-lg">
+      
+      {/* Display Alerta for success and error messages */}
+      {success && <Alerta message={success} onClose={() => setSuccess(null)} />}
+      {error && <Alerta message={error} onClose={() => setError(null)} />}
+
       <div className="page-header flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Gerenciar Rotas</h1>
         <button 

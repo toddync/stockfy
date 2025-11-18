@@ -1,15 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 interface Produto {
   id: number;
   descricao: string;
   codigo: string;
   preco_venda: number;
-}
-
-interface SugestaoCrossSelling {
-  produtoPrincipal: Produto;
-  produtosSugeridos: Produto[];
 }
 
 interface SugestorCrossSellingProps {
