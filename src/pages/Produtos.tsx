@@ -26,8 +26,10 @@ interface Produto {
   codigo: string;
   descricao: string;
   grupo_id: number;
-  preco_custo?: number;
-  preco_venda: number;
+  preco_compra?: number; // NEW: Valor pago ao fornecedor
+  preco_custo?: number;  // Custo real (compra + margem do dono)
+  preco_venda: number;   // Tabela A (preço de venda padrão)
+  preco_venda_b?: number; // NEW: Tabela B (vendedoras com maior margem)
   estoque_atual?: number;
   tabela_preco?: string;
   preco_minimo?: number;
@@ -366,9 +368,11 @@ const ProdutoForm: React.FC<{
       codigo: '',
       descricao: '',
       grupo_id: 0,
+      preco_compra: 0,
       preco_custo: 0,
       preco_venda: 0,
-      tabela_preco: '',
+      preco_venda_b: 0,
+      tabela_preco: 'A',
       preco_minimo: 0,
     }
   );
@@ -379,9 +383,11 @@ const ProdutoForm: React.FC<{
         codigo: '',
         descricao: '',
         grupo_id: 0,
+        preco_compra: 0,
         preco_custo: 0,
         preco_venda: 0,
-        tabela_preco: '',
+        preco_venda_b: 0,
+        tabela_preco: 'A',
         preco_minimo: 0,
       }
     );
@@ -439,26 +445,52 @@ const ProdutoForm: React.FC<{
           <label className={`block font-semibold text-gray-700 mb-2 ${isSeniorMode ? 'text-2xl' : 'text-xl'}`}>
             Preços
           </label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {!isSeniorMode && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm text-gray-500 mb-1">Preço Compra</label>
               <input
                 type="number"
-                placeholder="Preço Custo"
+                placeholder="0.00"
+                value={formData.preco_compra || ''}
+                onChange={e => setFormData({ ...formData, preco_compra: parseFloat(e.target.value) })}
+                step="0.01"
+                className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-500 mb-1">Preço Custo</label>
+              <input
+                type="number"
+                placeholder="0.00"
                 value={formData.preco_custo || ''}
                 onChange={e => setFormData({ ...formData, preco_custo: parseFloat(e.target.value) })}
                 step="0.01"
                 className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-            )}
-            <input
-              type="number"
-              placeholder="Preço Venda"
-              value={formData.preco_venda}
-              onChange={e => setFormData({ ...formData, preco_venda: parseFloat(e.target.value) })}
-              step="0.01"
-              required
-              className={`shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isSeniorMode ? 'py-4 px-6 text-2xl' : 'py-3 px-4 text-lg'}`}
-            />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-500 mb-1">Venda A (Padrão)</label>
+              <input
+                type="number"
+                placeholder="0.00"
+                value={formData.preco_venda}
+                onChange={e => setFormData({ ...formData, preco_venda: parseFloat(e.target.value) })}
+                step="0.01"
+                required
+                className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-500 mb-1">Venda B (Margem Maior)</label>
+              <input
+                type="number"
+                placeholder="0.00"
+                value={formData.preco_venda_b || ''}
+                onChange={e => setFormData({ ...formData, preco_venda_b: parseFloat(e.target.value) })}
+                step="0.01"
+                className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
           </div>
         </div>
 

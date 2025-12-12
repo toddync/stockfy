@@ -11,6 +11,7 @@ import Compras from './Compras';
 import Devolucoes from './Devolucoes';
 import AjusteEstoquePage from './AjusteEstoquePage'; // NEW: Ajuste de Estoque
 import Rotas from './Rotas';
+import Pracas from './Pracas'; // NEW: Praças
 import Solicitacoes from './Solicitacoes';
 import ContasFinanceiras from './ContasFinanceiras';
 import Residuos from './Residuos';
@@ -40,8 +41,10 @@ const pageConfigs: PageConfig[] = [
     { path: '/compras', component: Compras, name: 'Compras' },
     { path: '/devolucoes', component: Devolucoes, name: 'Devoluções' },
     { path: '/ajuste-estoque', component: AjusteEstoquePage, name: 'Ajuste de Estoque' }, // NEW: Ajuste de Estoque
+    { path: '/pracas', component: Pracas, name: 'Praças' }, // NEW: Praças (antes de Rotas)
     { path: '/rotas', component: Rotas, name: 'Rotas' },
     { path: '/solicitacoes', component: Solicitacoes, name: 'Solicitações' },
+
     { path: '/contas-financeiras', component: ContasFinanceiras, name: 'Contas Financeiras' },
     { path: '/residuos', component: Residuos, name: 'Resíduos' },
     { path: '/etiquetas', component: Etiquetas, name: 'Etiquetas' },

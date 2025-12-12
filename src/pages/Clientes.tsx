@@ -3,6 +3,19 @@ import Modal from '../components/Modal';
 import PageLayout from '../components/PageLayout';
 import { useSeniorMode } from '../contexts/SeniorModeContext';
 
+interface Praca {
+  id: number;
+  codigo: string;
+  nome: string;
+}
+
+interface Rota {
+  id: number;
+  codigo: string;
+  nome?: string;
+  praca_id?: number;
+}
+
 interface Cliente {
   id?: number;
   nome: string;
@@ -21,7 +34,8 @@ interface Cliente {
   nome_pai?: string;
   naturalidade?: string;
   rota_id?: number;
-  praça?: string;
+  praca_id?: number; // NEW: FK para praça
+  tabela_preco?: 'A' | 'B'; // NEW: Tabela de preço (A ou B)
   referencia?: string;
   ativo: boolean;
   data_cadastro?: string;
@@ -33,6 +47,8 @@ interface Cliente {
 
 const Clientes: React.FC = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [pracas, setPracas] = useState<Praca[]>([]);
+  const [rotas, setRotas] = useState<Rota[]>([]);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +58,8 @@ const Clientes: React.FC = () => {
 
   useEffect(() => {
     carregarClientes();
+    carregarPracas();
+    carregarRotas();
   }, []);
 
   const carregarClientes = async () => {
@@ -62,6 +80,30 @@ const Clientes: React.FC = () => {
       console.error("Erro ao carregar clientes:", e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const carregarPracas = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/pracas');
+      if (response.ok) {
+        const data: Praca[] = await response.json();
+        setPracas(data);
+      }
+    } catch (e) {
+      console.error('Erro ao carregar praças:', e);
+    }
+  };
+
+  const carregarRotas = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/rotas');
+      if (response.ok) {
+        const data: Rota[] = await response.json();
+        setRotas(data);
+      }
+    } catch (e) {
+      console.error('Erro ao carregar rotas:', e);
     }
   };
 
@@ -146,9 +188,11 @@ const Clientes: React.FC = () => {
       onErrorClose={() => setError(null)}
       onSuccessClose={() => setSuccess(null)}
     >
-      <Modal isOpen={mostrarForm} onClose={() => { setMostrarForm(false); setClienteEditando(null); }} size="4xl">
+      <Modal isOpen={mostrarForm} onClose={() => { setMostrarForm(false); setClienteEditando(null); }}>
         <ClienteForm
           cliente={clienteEditando}
+          pracas={pracas}
+          rotas={rotas}
           onSave={salvarCliente}
           onCancel={() => { setMostrarForm(false); setClienteEditando(null); }}
         />
@@ -199,9 +243,11 @@ const Clientes: React.FC = () => {
 
 const ClienteForm: React.FC<{
   cliente: Cliente | null;
+  pracas: Praca[];
+  rotas: Rota[];
   onSave: (cliente: Cliente) => void;
   onCancel: () => void;
-}> = ({ cliente, onSave, onCancel }) => {
+}> = ({ cliente, pracas, rotas, onSave, onCancel }) => {
   const { isSeniorMode } = useSeniorMode();
   const [formData, setFormData] = useState<Cliente>(
     cliente || {
@@ -210,8 +256,16 @@ const ClienteForm: React.FC<{
       telefone: '',
       cidade: '',
       ativo: true,
+      praca_id: undefined,
+      rota_id: undefined,
+      tabela_preco: 'A',
     }
   );
+
+  // Filtrar rotas pela praça selecionada
+  const rotasFiltradas = formData.praca_id
+    ? rotas.filter(r => r.praca_id === formData.praca_id)
+    : rotas;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,6 +317,46 @@ const ClienteForm: React.FC<{
             onChange={e => setFormData({ ...formData, cidade: e.target.value })}
             className={`shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isSeniorMode ? 'py-4 px-6 text-2xl' : 'py-3 px-4 text-lg'}`}
           />
+        </div>
+
+        {/* NEW: Praça, Rota e Tabela de Preço */}
+        <div>
+          <label className={`block font-semibold text-gray-700 mb-2 ${isSeniorMode ? 'text-2xl' : 'text-xl'}`}>
+            Localização e Preços
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <select
+              value={formData.praca_id || ''}
+              onChange={e => {
+                const pracaId = e.target.value ? parseInt(e.target.value) : undefined;
+                setFormData({ ...formData, praca_id: pracaId, rota_id: undefined });
+              }}
+              className={`shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isSeniorMode ? 'py-4 px-6 text-2xl' : 'py-3 px-4 text-lg'}`}
+            >
+              <option value="">Selecione uma Praça</option>
+              {pracas.map(praca => (
+                <option key={praca.id} value={praca.id}>{praca.codigo} - {praca.nome}</option>
+              ))}
+            </select>
+            <select
+              value={formData.rota_id || ''}
+              onChange={e => setFormData({ ...formData, rota_id: e.target.value ? parseInt(e.target.value) : undefined })}
+              className={`shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isSeniorMode ? 'py-4 px-6 text-2xl' : 'py-3 px-4 text-lg'}`}
+            >
+              <option value="">Selecione uma Rota</option>
+              {rotasFiltradas.map(rota => (
+                <option key={rota.id} value={rota.id}>{rota.codigo} - {rota.nome || ''}</option>
+              ))}
+            </select>
+            <select
+              value={formData.tabela_preco || 'A'}
+              onChange={e => setFormData({ ...formData, tabela_preco: e.target.value as 'A' | 'B' })}
+              className={`shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${isSeniorMode ? 'py-4 px-6 text-2xl' : 'py-3 px-4 text-lg'}`}
+            >
+              <option value="A">Tabela A (Padrão)</option>
+              <option value="B">Tabela B (Margem Maior)</option>
+            </select>
+          </div>
         </div>
 
         {!isSeniorMode && (

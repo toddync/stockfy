@@ -2,15 +2,23 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
 import Alerta from '../components/Alerta'; // Import Alerta
 
+interface Praca {
+  id: number;
+  codigo: string;
+  nome: string;
+}
+
 interface Rota {
   id?: number; // ID is optional for new entries
   codigo: string;
   bairro?: string;
   nome?: string;
+  praca_id?: number; // NEW: Vinculo com Praça
 }
 
 const Rotas: React.FC = () => {
   const [rotas, setRotas] = useState<Rota[]>([]);
+  const [pracas, setPracas] = useState<Praca[]>([]); // NEW: Lista de praças
   const [mostrarForm, setMostrarForm] = useState(false);
   const [rotaEditando, setRotaEditando] = useState<Rota | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,6 +27,7 @@ const Rotas: React.FC = () => {
 
   useEffect(() => {
     carregarRotas();
+    carregarPracas(); // NEW: Carregar praças
   }, []);
 
   const carregarRotas = async () => {
@@ -41,6 +50,19 @@ const Rotas: React.FC = () => {
       console.error("Erro ao carregar rotas:", e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // NEW: Carregar praças
+  const carregarPracas = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/pracas');
+      if (response.ok) {
+        const data: Praca[] = await response.json();
+        setPracas(data);
+      }
+    } catch (e) {
+      console.error('Erro ao carregar praças:', e);
     }
   };
 
@@ -139,6 +161,7 @@ const Rotas: React.FC = () => {
       <Modal isOpen={mostrarForm} onClose={() => { setMostrarForm(false); setRotaEditando(null); }}>
         <RotaForm
           rota={rotaEditando}
+          pracas={pracas}
           onSave={salvarRota}
           onCancel={() => { setMostrarForm(false); setRotaEditando(null); }}
         />
@@ -149,6 +172,7 @@ const Rotas: React.FC = () => {
           <thead>
             <tr className="bg-gray-100 border-b">
               <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Código</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Praça</th>
               <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Bairro</th>
               <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Nome</th>
               <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Ações</th>
@@ -158,6 +182,7 @@ const Rotas: React.FC = () => {
             {rotas.map(rota => (
               <tr key={rota.id} className="border-b hover:bg-gray-50">
                 <td className="py-3 px-4 text-sm text-gray-700">{rota.codigo}</td>
+                <td className="py-3 px-4 text-sm text-gray-700">{pracas.find(p => p.id === rota.praca_id)?.nome || '-'}</td>
                 <td className="py-3 px-4 text-sm text-gray-700">{rota.bairro}</td>
                 <td className="py-3 px-4 text-sm text-gray-700">{rota.nome}</td>
                 <td className="py-3 px-4 text-sm">
@@ -185,14 +210,16 @@ const Rotas: React.FC = () => {
 
 const RotaForm: React.FC<{
   rota: Rota | null;
+  pracas: Praca[];
   onSave: (rota: Rota) => void;
   onCancel: () => void;
-}> = ({ rota, onSave, onCancel }) => {
+}> = ({ rota, pracas, onSave, onCancel }) => {
   const [formData, setFormData] = useState<Rota>(
     rota || {
       codigo: '',
       bairro: '',
       nome: '',
+      praca_id: undefined,
     }
   );
 
@@ -212,22 +239,47 @@ const RotaForm: React.FC<{
       <form onSubmit={handleSubmit} className="space-y-8">
         <div>
             <label className="block text-xl font-semibold text-gray-700 mb-2">
-                1. Informações da Rota
+                1. Praça e Código
             </label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <select
+                    value={formData.praca_id || ''}
+                    onChange={e => setFormData({ ...formData, praca_id: e.target.value ? parseInt(e.target.value) : undefined })}
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                    <option value="">Selecione uma Praça</option>
+                    {pracas.map(praca => (
+                        <option key={praca.id} value={praca.id}>{praca.codigo} - {praca.nome}</option>
+                    ))}
+                </select>
                 <input
                     type="text"
-                    placeholder="Código"
+                    placeholder="Código da Rota"
                     value={formData.codigo}
                     onChange={e => setFormData({ ...formData, codigo: e.target.value })}
                     required
                     className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+            </div>
+        </div>
+
+        <div>
+            <label className="block text-xl font-semibold text-gray-700 mb-2">
+                2. Informações da Rota
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input
                     type="text"
                     placeholder="Nome"
                     value={formData.nome || ''}
                     onChange={e => setFormData({ ...formData, nome: e.target.value })}
+                    className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <input
+                    type="text"
+                    placeholder="Bairro"
+                    value={formData.bairro || ''}
+                    onChange={e => setFormData({ ...formData, bairro: e.target.value })}
                     className="shadow-lg appearance-none border-2 border-gray-200 rounded-lg w-full py-3 px-4 text-gray-700 text-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
             </div>

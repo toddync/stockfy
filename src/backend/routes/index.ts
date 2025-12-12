@@ -19,6 +19,7 @@ import usuariosRouter from './usuarios.js';
 import permissoesRouter from './permissoes.js';
 import usuarioPermissoesRouter from './usuarioPermissoes.js';
 import sistemaAlertasRouter from './sistemaAlertas.js';
+import pracasRouter from './pracas.js';
 
 
 const router = Router();
@@ -43,6 +44,7 @@ router.use('/usuarios', usuariosRouter);
 router.use('/permissoes', permissoesRouter);
 router.use('/usuario-permissoes', usuarioPermissoesRouter);
 router.use('/sistema-alertas', sistemaAlertasRouter);
+router.use('/pracas', pracasRouter);
 
 
 export default router;
