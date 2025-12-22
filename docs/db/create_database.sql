@@ -376,69 +376,124 @@ CREATE INDEX idx_movimentacao_itens_variacao ON `movimentacao_itens`(`variacao_i
 -- INSERT SAMPLE DATA (OPTIONAL)
 -- =============================================
 
--- Insert sample rotas
-INSERT INTO `rotas` (`codigo`, `bairro`, `nome`) VALUES
-('R001', 'Centro', 'Rota Centro'),
-('R002', 'Jardim', 'Rota Jardim'),
-('R003', 'Vila Nova', 'Rota Vila Nova');
+-- Disable Foreign Key checks temporarily to prevent errors during bulk insertion
+SET FOREIGN_KEY_CHECKS = 0;
 
--- Insert sample vendedores
-INSERT INTO `vendedores` (`codigo`, `nome`, `cpf`, `telefone`, `email`) VALUES
-('V001', 'João Silva', '123.456.789-00', '(11) 9999-8888', 'joao@email.com'),
-('V002', 'Maria Santos', '987.654.321-00', '(11) 7777-6666', 'maria@email.com');
+-- ==========================================
+-- 1. BASE TABLES (Lookups & Independent Entities)
+-- ==========================================
 
--- Insert sample produto_grupos
-INSERT INTO `produto_grupos` (`codigo`, `descricao`) VALUES
-('G001', 'Camisetas'),
-('G002', 'Calças'),
-('G003', 'Vestidos'),
-('G004', 'Acessórios');
+-- Rotas
+INSERT INTO `rotas` (`id`, `codigo`, `bairro`, `nome`) VALUES
+(1, 'R001', 'Centro', 'Rota Central'),
+(2, 'R002', 'Zona Sul', 'Rota Costeira'),
+(3, 'R003', 'Zona Norte', 'Rota Industrial');
 
--- Insert sample fornecedores
-INSERT INTO `fornecedores` (`marca`, `razao_social`, `tipo_pessoa`, `cnpj`, `telefone`) VALUES
-('Marca A', 'Fornecedor A Ltda', 'J', '12.345.678/0001-90', '(11) 3333-2222'),
-('Marca B', 'Fornecedor B ME', 'J', '98.765.432/0001-10', '(11) 4444-3333');
+-- Produto Grupos
+INSERT INTO `produto_grupos` (`id`, `codigo`, `descricao`) VALUES
+(1, 'GRP01', 'Vestuário'),
+(2, 'GRP02', 'Calçados'),
+(3, 'GRP03', 'Acessórios');
 
--- Insert sample clientes
-INSERT INTO `clientes` (`nome`, `cpf_cnpj`, `telefone`, `email`, `cidade`, `estado`, `rota_id`, `ativo`) VALUES
-('Cliente A', '111.222.333-44', '(11) 5555-4444', 'clientea@email.com', 'São Paulo', 'SP', 1, TRUE),
-('Cliente B', '222.333.444-55', '(11) 6666-5555', 'clienteb@email.com', 'São Paulo', 'SP', 2, TRUE);
+-- Tags
+INSERT INTO `tags` (`id`, `nome`) VALUES
+(1, 'Promoção'),
+(2, 'Lançamento'),
+(3, 'Outlet');
 
--- Insert sample produtos
-INSERT INTO `produtos` (`codigo`, `descricao`, `grupo_id`, `preco_custo`, `preco_venda`) VALUES
-('P001', 'Camiseta Básica Branca', 1, 15.00, 29.90),
-('P002', 'Calça Jeans Slim', 2, 45.00, 89.90),
-('P003', 'Vestido Floral', 3, 35.00, 79.90),
-('P004', 'Bolsa Couro', 4, 60.00, 129.90);
+-- Vendedores
+INSERT INTO `vendedores` (`id`, `codigo`, `nome`, `cpf`, `email`, `cidade`, `estado`) VALUES
+(1, 'VEND01', 'Carlos Silva', '123.456.789-00', 'carlos@empresa.com', 'São Paulo', 'SP'),
+(2, 'VEND02', 'Mariana Souza', '987.654.321-00', 'mariana@empresa.com', 'Rio de Janeiro', 'RJ');
 
--- Insert sample tags
-INSERT INTO `tags` (`nome`) VALUES ('Promoção'), ('Novo'), ('Verão'), ('Inverno');
+-- Fornecedores
+INSERT INTO `fornecedores` (`id`, `razao_social`, `marca`, `tipo_pessoa`, `cnpj`, `cidade`, `estado`, `ativo`) VALUES
+(1, 'Têxtil Brasil LTDA', 'MegaFabrics', 'J', '12.345.678/0001-90', 'Americana', 'SP', 1),
+(2, 'Couros do Sul SA', 'LeatherKing', 'J', '98.765.432/0001-10', 'Porto Alegre', 'RS', 1);
 
--- Insert sample produto_variacoes
-INSERT INTO `produto_variacoes` (`produto_id`, `sku`, `tamanho`, `cor`, `estoque_atual`) VALUES
-(1, 'P001-BR-P', 'P', 'Branca', 50),
-(1, 'P001-BR-M', 'M', 'Branca', 50),
-(2, 'P002-JE-38', '38', 'Jeans Claro', 25),
-(2, 'P002-JE-40', '40', 'Jeans Claro', 25);
+-- Usuarios (System Users)
+INSERT INTO `usuarios` (`id`, `nome`, `senha_hash`, `ativo`) VALUES
+(1, 'admin', 'hash_senha_secreta_123', 1),
+(2, 'gerente', 'hash_senha_gerente_456', 1);
 
--- Insert sample produto_tags
-INSERT INTO `produto_tags` (`produto_id`, `tag_id`) VALUES (1, 2), (1, 3), (2, 3), (3, 1);
+-- ==========================================
+-- 2. MAIN ENTITIES (Depend on Base Tables)
+-- ==========================================
 
+-- Clientes (Links to Rotas)
+INSERT INTO `clientes` (`id`, `nome`, `cpf_cnpj`, `rota_id`, `cidade`, `estado`, `limite_credito`, `ativo`) VALUES
+(1, 'Loja da Esquina', '11.111.111/0001-11', 1, 'São Paulo', 'SP', 5000.00, 1),
+(2, 'Boutique Chique', '22.222.222/0001-22', 2, 'Rio de Janeiro', 'RJ', 12000.00, 1),
+(3, 'Mercadão Popular', '33.333.333/0001-33', 3, 'São Paulo', 'SP', 8000.00, 1);
 
--- Insert sample usuario and permissions
-INSERT INTO `usuarios` (`nome`, `senha_hash`, `ativo`) VALUES
-('admin', '$2b$10$ExampleHashForAdmin', TRUE);
+-- Produtos (Links to Grupos)
+INSERT INTO `produtos` (`id`, `codigo`, `descricao`, `grupo_id`, `preco_custo`, `preco_venda`, `preco_minimo`) VALUES
+(1, 'P001', 'Camiseta Básica Algodão', 1, 15.00, 35.00, 30.00),
+(2, 'P002', 'Calça Jeans Skinny', 1, 40.00, 120.00, 100.00),
+(3, 'P003', 'Tênis Esportivo', 2, 80.00, 250.00, 220.00),
+(4, 'P004', 'Boné Aba Reta', 3, 10.00, 45.00, 40.00);
 
-INSERT INTO `permissoes` (`chave`, `descricao`) VALUES
-('clientes_ver', 'Visualizar clientes'),
-('clientes_editar', 'Editar clientes'),
-('produtos_ver', 'Visualizar produtos'),
-('produtos_editar', 'Editar produtos'),
-('pedidos_ver', 'Visualizar pedidos'),
-('pedidos_editar', 'Editar pedidos');
+-- ==========================================
+-- 3. SUB-ENTITIES (Depend on Products)
+-- ==========================================
 
-INSERT INTO `usuario_permissoes` (`usuario_id`, `permissao_id`) VALUES
-(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6);
+-- Produto Variações
+INSERT INTO `produto_variacoes` (`id`, `produto_id`, `sku`, `tamanho`, `cor`, `estoque_atual`) VALUES
+(1, 1, 'P001-P-BR', 'P', 'Branco', 100.00),
+(2, 1, 'P001-M-BR', 'M', 'Branco', 150.00),
+(3, 1, 'P001-G-PT', 'G', 'Preto', 80.00),
+(4, 2, 'P002-38-AZ', '38', 'Azul', 50.00),
+(5, 3, 'P003-42-VM', '42', 'Vermelho', 20.00);
+
+-- Produto Tags
+INSERT INTO `produto_tags` (`produto_id`, `tag_id`) VALUES
+(1, 1), -- Camiseta is Promoção
+(3, 2); -- Tênis is Lançamento
+
+-- ==========================================
+-- 4. TRANSACTIONS (Orders, Purchases, Finance)
+-- ==========================================
+
+-- Pedidos (Sales)
+INSERT INTO `pedidos` (`id`, `numero_pedido`, `cliente_id`, `vendedor_id`, `data_pedido`, `valor_total`, `situacao`) VALUES
+(1, 'PED-1001', 1, 1, '2023-10-01', 350.00, 'faturado'),
+(2, 'PED-1002', 2, 2, '2023-10-02', 1200.00, 'pendente'),
+(3, 'PED-1003', 1, 1, '2023-10-03', 70.00, 'cancelado');
+
+-- Pedido Itens (Links Pedidos to Produtos/Variacoes)
+INSERT INTO `pedido_itens` (`id`, `pedido_id`, `produto_id`, `variacao_id`, `quantidade_saida`, `preco_venda`) VALUES
+(1, 1, 1, 1, 10, 35.00), -- 10 Camisetas Brancas P
+(2, 2, 2, 4, 10, 120.00), -- 10 Calças Jeans
+(3, 3, 1, 2, 2, 35.00);   -- 2 Camisetas Brancas M
+
+-- Compras (Purchases from Suppliers)
+INSERT INTO `compras` (`id`, `numero_pedido`, `fornecedor_id`, `data_pedido`, `valor_total_nota`, `situacao`) VALUES
+(1, 'COMP-500', 1, '2023-09-01', 5000.00, 'finalizado');
+
+-- Compra Itens
+INSERT INTO `compra_itens` (`id`, `compra_id`, `produto_id`, `variacao_id`, `quantidade`, `preco_compra`, `valor_total`) VALUES
+(1, 1, 1, 1, 200, 12.50, 2500.00),
+(2, 1, 1, 2, 200, 12.50, 2500.00);
+
+-- Contas Financeiras (Receivables/Payables)
+INSERT INTO `contas_financeiras` (`id`, `data_emissao`, `tipo_documento`, `numero_documento`, `valor`, `data_vencimento`, `situacao`, `cliente_id`, `vendedor_id`, `sinal`) VALUES
+(1, '2023-10-01', 'BOLETO', 'DOC-1001', 350.00, '2023-11-01', 'pendente', 1, 1, '+'), -- Receivable from Sale
+(2, '2023-09-01', 'NF', 'DOC-COMP500', 5000.00, '2023-10-01', 'pago', NULL, NULL, '-'); -- Payable to Supplier
+
+-- Movimentações Estoque (Stock Adjustments/Returns)
+INSERT INTO `movimentacoes_estoque` (`id`, `tipo_movimentacao`, `numero_documento`, `data_documento`, `cliente_id`, `valor_total`) VALUES
+(1, 'devolucao', 'DEV-001', '2023-10-05', 1, 35.00);
+
+-- Movimentação Itens
+INSERT INTO `movimentacao_itens` (`id`, `movimentacao_id`, `produto_id`, `variacao_id`, `quantidade`, `preco_custo`) VALUES
+(1, 1, 1, 1, 1, 15.00);
+
+-- Etiquetas
+INSERT INTO `etiquetas` (`id`, `cliente_id`, `nome_vendedor`) VALUES
+(1, 1, 'Carlos Silva');
+
+-- Re-enable Foreign Key checks
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================
 -- RESET COMPLETE - DATABASE READY FOR USE

@@ -1,6 +1,7 @@
 -- Migration: Adicionar tabela Praças e relacionamentos
 -- Data: 2025-12-12
 -- Descrição: Fase 1 do sistema SYS_ROSAS
+USE stockify_db;
 
 -- =============================================
 -- 1. CRIAR TABELA PRAÇAS
@@ -15,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `pracas` (
 -- 2. ADICIONAR praca_id EM ROTAS
 -- =============================================
 ALTER TABLE `rotas` ADD COLUMN IF NOT EXISTS `praca_id` INT;
-ALTER TABLE `rotas` ADD CONSTRAINT `fk_rotas_pracas` 
+ALTER TABLE `rotas` ADD CONSTRAINT `fk_rotas_pracas`
   FOREIGN KEY (`praca_id`) REFERENCES `pracas`(`id`) ON DELETE SET NULL;
 
 -- =============================================
@@ -29,7 +30,7 @@ ALTER TABLE `produtos` ADD COLUMN IF NOT EXISTS `preco_venda_b` DECIMAL(12, 2);
 -- =============================================
 ALTER TABLE `clientes` ADD COLUMN IF NOT EXISTS `praca_id` INT;
 ALTER TABLE `clientes` ADD COLUMN IF NOT EXISTS `tabela_preco` CHAR(1) DEFAULT 'A';
-ALTER TABLE `clientes` ADD CONSTRAINT `fk_clientes_pracas` 
+ALTER TABLE `clientes` ADD CONSTRAINT `fk_clientes_pracas`
   FOREIGN KEY (`praca_id`) REFERENCES `pracas`(`id`) ON DELETE SET NULL;
 
 -- =============================================
