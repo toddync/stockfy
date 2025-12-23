@@ -100,8 +100,10 @@
 </script>
 
 <div class="p-6 max-w-2xl mx-auto">
-    <Card.Root class="overflow-hidden border-2 border-primary/20 shadow-xl">
-        <Card.Header class="bg-primary/5 pb-8">
+    <Card.Root
+        class="overflow-hidden border-2 border-primary/20 shadow-xl pt-0"
+    >
+        <Card.Header class="bg-primary/5 pb-8 pt-5">
             <div class="flex justify-center mb-4">
                 <div class="p-3 rounded-full bg-primary/10">
                     <Truck class="h-8 w-8 text-primary" />
@@ -141,7 +143,7 @@
 
                         {#if searchQuery.length > 1}
                             <div
-                                class="absolute z-10 w-full mt-2 bg-popover border rounded-md shadow-lg max-h-60 overflow-y-auto"
+                                class="absolute z-100 w-full mt-2 bg-popover border rounded-md shadow-lg max-h-60 overflow-y-auto"
                             >
                                 {#each filteredProdutos as p}
                                     <button

@@ -1,18 +1,17 @@
 <script lang="ts">
     import { Button } from "$lib/components/ui/button/index";
-    import * as Table from "$lib/components/ui/table/index.js";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
     import { Input } from "$lib/components/ui/input/index";
+    import * as Table from "$lib/components/ui/table/index.js";
     import type { Cliente, ContaFinanceira, Vendedor } from "$lib/types";
     import { Label } from "@/components/ui/label/index";
     import db, { queryHelper } from "@/db/db.svelte";
-    import Ellipsis from "@lucide/svelte/icons/ellipsis";
     import PencilLine from "@lucide/svelte/icons/pencil-line";
     import Plus from "@lucide/svelte/icons/plus";
     import Search from "@lucide/svelte/icons/search";
     import Trash2 from "@lucide/svelte/icons/trash-2";
+    import TrendingDown from "@lucide/svelte/icons/trending-down";
     import TrendingUp from "@lucide/svelte/icons/trending-up";
     import Wallet from "@lucide/svelte/icons/wallet";
     import { onMount } from "svelte";
@@ -159,7 +158,7 @@
         <Card.Root class="bg-primary/5 border-primary/20">
             <Card.Header class="pb-2">
                 <Card.Description class="flex items-center gap-2">
-                    <Wallet class="h-4 w-4 text-primary" />
+                    <TrendingDown class="h-4 w-4 text-primary" />
                     Balanço Pendente
                 </Card.Description>
                 <Card.Title class="text-3xl font-bold text-red-600">
@@ -173,9 +172,9 @@
                     <TrendingUp class="h-4 w-4 text-green-600" />
                     Total Liquidado
                 </Card.Description>
-                <Card.Title class="text-3xl font-bold text-green-600"
-                    >{formatCurrency(totalPago)}</Card.Title
-                >
+                <Card.Title class="text-3xl font-bold text-green-600">
+                    {formatCurrency(totalPago)}
+                </Card.Title>
             </Card.Header>
         </Card.Root>
     </div>
@@ -183,10 +182,13 @@
     <Card.Root>
         <Card.Header class="flex flex-row items-center">
             <div>
-                <Card.Title class="text-3xl">Contas Financeiras</Card.Title>
-                <Card.Description
-                    >Gerencie suas contas a pagar e a receber.</Card.Description
-                >
+                <Card.Title class="text-3xl flex items-center gap-2">
+                    <Wallet class="h-8 w-8 text-primary" />
+                    Contas Financeiras
+                </Card.Title>
+                <Card.Description>
+                    Gerencie suas contas a pagar e a receber.
+                </Card.Description>
             </div>
             <Button
                 class="ml-auto cursor-pointer"
@@ -224,36 +226,37 @@
                         <Table.Head>Valor</Table.Head>
                         <Table.Head>Vencimento</Table.Head>
                         <Table.Head>Situação</Table.Head>
-                        <Table.Head class="w-[50px]"></Table.Head>
+                        <Table.Head class="w-12.5"></Table.Head>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
                     {#each filteredContas as conta (conta.id)}
                         <Table.Row>
-                            <Table.Cell
-                                >{new Date(
+                            <Table.Cell>
+                                {new Date(
                                     conta.data_emissao,
-                                ).toLocaleDateString("pt-BR")}</Table.Cell
-                            >
+                                ).toLocaleDateString("pt-BR")}
+                            </Table.Cell>
                             <Table.Cell class="font-medium text-primary">
                                 {conta.numero_documento}
                                 <span
                                     class="block text-xs text-muted-foreground"
-                                    >{conta.tipo_documento}</span
                                 >
+                                    {conta.tipo_documento}
+                                </span>
                             </Table.Cell>
-                            <Table.Cell class="font-bold"
-                                >{formatCurrency(conta.valor)}</Table.Cell
-                            >
-                            <Table.Cell
-                                >{new Date(
+                            <Table.Cell class="font-bold">
+                                {formatCurrency(conta.valor)}
+                            </Table.Cell>
+                            <Table.Cell>
+                                {new Date(
                                     conta.data_vencimento,
-                                ).toLocaleDateString("pt-BR")}</Table.Cell
-                            >
+                                ).toLocaleDateString("pt-BR")}
+                            </Table.Cell>
                             <Table.Cell>
                                 <span
                                     class={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                                        conta.situacao === "Pago"
+                                        conta.situacao?.toLowerCase() === "pago"
                                             ? "bg-green-100 text-green-800"
                                             : "bg-yellow-100 text-yellow-800"
                                     }`}
@@ -262,46 +265,28 @@
                                 </span>
                             </Table.Cell>
                             <Table.Cell>
-                                <DropdownMenu.Root>
-                                    <DropdownMenu.Trigger>
-                                        {#snippet child({ props })}
-                                            <Button
-                                                {...props}
-                                                variant="ghost"
-                                                size="icon"
-                                            >
-                                                <Ellipsis class="h-4 w-4" />
-                                            </Button>
-                                        {/snippet}
-                                    </DropdownMenu.Trigger>
-                                    <DropdownMenu.Content align="end">
-                                        <DropdownMenu.Group>
-                                            <DropdownMenu.Label
-                                                >Ações</DropdownMenu.Label
-                                            >
-                                            <DropdownMenu.Separator />
-                                            <DropdownMenu.Item
-                                                onclick={() => {
-                                                    contaData = { ...conta };
-                                                    dialog = "edit";
-                                                }}
-                                            >
-                                                <PencilLine
-                                                    class="mr-2 h-4 w-4"
-                                                />
-                                                Editar
-                                            </DropdownMenu.Item>
-                                            <DropdownMenu.Item
-                                                class="text-destructive focus:text-destructive"
-                                                onclick={() =>
-                                                    delete_(conta.id)}
-                                            >
-                                                <Trash2 class="mr-2 h-4 w-4" />
-                                                Excluir
-                                            </DropdownMenu.Item>
-                                        </DropdownMenu.Group>
-                                    </DropdownMenu.Content>
-                                </DropdownMenu.Root>
+                                <Button
+                                    variant="ghost"
+                                    size="icon-lg"
+                                    onclick={() => {
+                                        contaData = { ...conta };
+                                        dialog = "edit";
+                                    }}
+                                >
+                                    <PencilLine
+                                        class="h-4 w-4 stroke-3 stroke-lime-400"
+                                    />
+                                </Button>
+
+                                <Button
+                                    variant="ghost"
+                                    size="icon-lg"
+                                    onclick={() => delete_(conta.id)}
+                                >
+                                    <Trash2
+                                        class="h-4 w-4 stroke-3 stroke-red-500"
+                                    />
+                                </Button>
                             </Table.Cell>
                         </Table.Row>
                     {:else}
@@ -328,7 +313,7 @@
         }
     }}
 >
-    <Dialog.Content class="sm:max-w-[600px]">
+    <Dialog.Content class="sm:max-w-150">
         <Dialog.Header>
             <Dialog.Title>
                 {dialog === "new" ? "Nova Conta" : "Editar Conta"}
@@ -424,9 +409,9 @@
         </div>
 
         <Dialog.Footer>
-            <Button variant="outline" onclick={() => (dialog = null)}
-                >Cancelar</Button
-            >
+            <Button variant="outline" onclick={() => (dialog = null)}>
+                Cancelar
+            </Button>
             <Button onclick={save}>Salvar</Button>
         </Dialog.Footer>
     </Dialog.Content>

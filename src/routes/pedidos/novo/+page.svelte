@@ -2,10 +2,12 @@
     import { goto } from "$app/navigation";
     import { Button } from "$lib/components/ui/button/index";
     import * as Card from "$lib/components/ui/card/index.js";
+    import * as Select from "$lib/components/ui/select";
     import { Input } from "$lib/components/ui/input/index";
     import { Label } from "$lib/components/ui/label/index";
     import * as Table from "$lib/components/ui/table/index.js";
     import type { Cliente, PedidoItem, Produto, Vendedor } from "$lib/types";
+    import db, { queryHelper } from "@/db/db.svelte";
     import ArrowLeft from "@lucide/svelte/icons/arrow-left";
     import Plus from "@lucide/svelte/icons/plus";
     import ShoppingCart from "@lucide/svelte/icons/shopping-cart";
@@ -75,22 +77,51 @@
         }
 
         try {
-            const response = await fetch("http://localhost:3000/api/pedidos", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    pedido: { ...orderData, valor_total: totalPrice },
-                    itens: items,
-                }),
-            });
+            let q = queryHelper({ ...orderData, valor_total: totalPrice });
 
-            if (!response.ok) throw new Error("Erro ao salvar pedido");
+            const savedOrder = await db.execute(
+                `INSERT INTO pedidos (${q.columns}) VALUES (${q.placeholders})`,
+                q.values,
+            );
 
-            const savedOrder = await response.json();
-            toast.success("Pedido realizado com sucesso!");
-            goto("/pedidos");
+            let id = savedOrder.lastInsertId;
+            let ids: Array<number> = [];
+
+            try {
+                for (let i = 0; i < items.length; i++) {
+                    let item = {
+                        ...items[i],
+                        quantidade_retorno: 0,
+                        pedido_id: id!,
+                    };
+
+                    delete item.descricao;
+                    delete item.codigo;
+
+                    let q = queryHelper(item);
+
+                    console.log(
+                        `INSERT INTO pedido_itens (${q.columns}) VALUES (${q.placeholders})`,
+                        q.values,
+                    );
+
+                    await db.execute(
+                        `INSERT INTO pedido_itens (${q.columns}) VALUES (${q.placeholders})`,
+                        q.values,
+                    );
+                }
+
+                toast.success("Pedido realizado com sucesso!");
+                goto("/pedidos");
+            } catch (e: any) {
+                await db.execute("DELETE FROM pedidos WHERE id = $1", [id]);
+
+                toast.error(e.message);
+                console.error(e);
+            }
         } catch (e: any) {
             toast.error(e.message);
+            console.error(e);
         }
     }
 
@@ -98,15 +129,15 @@
         try {
             const [clientesRes, vendedoresRes, produtosRes] = await Promise.all(
                 [
-                    fetch("http://localhost:3000/api/clientes"),
-                    fetch("http://localhost:3000/api/vendedores"),
-                    fetch("http://localhost:3000/api/produtos"),
+                    db.select("SELECT * FROM clientes", []),
+                    db.select("SELECT * FROM vendedores", []),
+                    db.select("SELECT * FROM produtos", []),
                 ],
             );
 
-            clientes = await clientesRes.json();
-            vendedores = await vendedoresRes.json();
-            produtos = await produtosRes.json();
+            clientes = clientesRes as Array<Cliente>;
+            vendedores = vendedoresRes as Array<Vendedor>;
+            produtos = produtosRes as Array<Produto>;
         } catch (e: any) {
             console.error(e);
         }
@@ -122,7 +153,7 @@
     }
 </script>
 
-<div class="p-6 max-w-5xl mx-auto space-y-6">
+<div class="p-6 mx-auto space-y-6">
     <div class="flex items-center gap-4">
         <Button variant="ghost" size="icon" onclick={() => goto("/pedidos")}>
             <ArrowLeft class="h-5 w-5" />
@@ -156,31 +187,61 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="grid gap-2">
+                    <div class="grid gap-3">
                         <Label for="client">Cliente</Label>
-                        <select
-                            id="client"
-                            bind:value={orderData.cliente_id}
-                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        <Select.Root
+                            type="single"
+                            onValueChange={(v) => {
+                                orderData.cliente_id = parseInt(v);
+                            }}
                         >
-                            <option value={0}>Selecione um cliente...</option>
-                            {#each clientes as c}
-                                <option value={c.id}>{c.nome}</option>
-                            {/each}
-                        </select>
+                            <Select.Trigger class="w-full" id="client">
+                                {orderData.cliente_id &&
+                                orderData.cliente_id >= 0
+                                    ? clientes.find(
+                                          (c) => c.id == orderData.cliente_id,
+                                      )?.nome
+                                    : "Selecione um cliente..."}
+                            </Select.Trigger>
+                            <Select.Content>
+                                <Select.Item value="-1">
+                                    Selecione um cliente...
+                                </Select.Item>
+                                {#each clientes as c}
+                                    <Select.Item value={`${c.id}`}>
+                                        {c.nome}
+                                    </Select.Item>
+                                {/each}
+                            </Select.Content>
+                        </Select.Root>
                     </div>
                     <div class="grid gap-2">
                         <Label for="seller">Vendedor</Label>
-                        <select
-                            id="seller"
-                            bind:value={orderData.vendedor_id}
-                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        <Select.Root
+                            type="single"
+                            onValueChange={(v) => {
+                                orderData.vendedor_id = parseInt(v);
+                            }}
                         >
-                            <option value={0}>Selecione um vendedor...</option>
-                            {#each vendedores as v}
-                                <option value={v.id}>{v.nome}</option>
-                            {/each}
-                        </select>
+                            <Select.Trigger class="w-full" id="seller">
+                                {orderData.vendedor_id &&
+                                orderData.vendedor_id >= 0
+                                    ? vendedores.find(
+                                          (c) => c.id == orderData.vendedor_id,
+                                      )?.nome
+                                    : "Selecione um vendedor..."}
+                            </Select.Trigger>
+                            <Select.Content>
+                                <Select.Item value="-1">
+                                    Selecione um vendedor...
+                                </Select.Item>
+                                {#each vendedores as v}
+                                    <Select.Item value={`${v.id}`}>
+                                        {v.nome}
+                                    </Select.Item>
+                                {/each}
+                            </Select.Content>
+                        </Select.Root>
                     </div>
                 </div>
             </Card.Content>
@@ -228,23 +289,35 @@
             >
                 <div class="grid gap-2 col-span-2">
                     <Label>Produto</Label>
-                    <select
-                        bind:value={currentItem.produto_id}
-                        onchange={() => {
+                    <Select.Root
+                        type="single"
+                        onValueChange={(v) => {
+                            currentItem.produto_id = parseInt(v);
                             const p = produtos.find(
                                 (p) => p.id === currentItem.produto_id,
                             );
                             if (p) currentItem.preco_venda = p.preco_venda || 0;
                         }}
-                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     >
-                        <option value={0}>Selecione um produto...</option>
-                        {#each produtos as p}
-                            <option value={p.id}
-                                >{p.codigo} - {p.descricao}</option
-                            >
-                        {/each}
-                    </select>
+                        <Select.Trigger class="w-full" id="cliente">
+                            {currentItem.produto_id &&
+                            currentItem.produto_id >= 0
+                                ? produtos.find(
+                                      (c) => c.id == currentItem.produto_id,
+                                  )?.descricao
+                                : "Selecione um produto..."}
+                        </Select.Trigger>
+                        <Select.Content>
+                            <Select.Item value="-1">
+                                Selecione um produto...
+                            </Select.Item>
+                            {#each produtos as p}
+                                <Select.Item value={`${p.id}`}>
+                                    {p.codigo} - {p.descricao}
+                                </Select.Item>
+                            {/each}
+                        </Select.Content>
+                    </Select.Root>
                 </div>
                 <div class="grid gap-2">
                     <Label>Qtd</Label>
@@ -268,7 +341,7 @@
                         <Table.Head class="text-right">Qtd</Table.Head>
                         <Table.Head class="text-right">Unitário</Table.Head>
                         <Table.Head class="text-right">Subtotal</Table.Head>
-                        <Table.Head class="w-[50px]"></Table.Head>
+                        <Table.Head class="w-12.5"></Table.Head>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
@@ -296,7 +369,9 @@
                                     size="icon"
                                     onclick={() => removeItem(i)}
                                 >
-                                    <Trash2 class="h-4 w-4 text-destructive" />
+                                    <Trash2
+                                        class="h-4 w-4 stroke-red-500 stroke-3"
+                                    />
                                 </Button>
                             </Table.Cell>
                         </Table.Row>

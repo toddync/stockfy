@@ -10,7 +10,7 @@
     import Plus from "@lucide/svelte/icons/plus";
     import Search from "@lucide/svelte/icons/search";
     import Trash2 from "@lucide/svelte/icons/trash-2";
-    import UserCog from "@lucide/svelte/icons/user-cog";
+    import ShieldUser from "@lucide/svelte/icons/shield-user";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
 
@@ -121,7 +121,7 @@
     <Card.Header class="flex flex-row items-center">
         <div>
             <Card.Title class="text-3xl flex items-center gap-2">
-                <UserCog class="h-8 w-8 text-primary" />
+                <ShieldUser class="h-8 w-8 text-primary" />
                 Permissões por Usuário
             </Card.Title>
             <Card.Description
@@ -188,11 +188,13 @@
                         <Table.Cell class="flex justify-end gap-2">
                             <Button
                                 variant="ghost"
-                                size="icon"
+                                size="icon-lg"
                                 onclick={() =>
                                     delete_(up.usuario_id, up.permissao_id)}
                             >
-                                <Trash2 class="h-4 w-4 text-destructive" />
+                                <Trash2
+                                    class="h-4 w-4 stroke-3 stroke-red-500"
+                                />
                             </Button>
                         </Table.Cell>
                     </Table.Row>

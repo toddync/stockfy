@@ -1,4 +1,5 @@
 <script lang="ts">
+    import FileText from "@lucide/svelte/icons/file-text";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import * as Table from "$lib/components/ui/table/index.js";
@@ -114,12 +115,13 @@
 <Card.Root class="m-10">
     <Card.Header class="flex flex-row items-center">
         <div>
-            <Card.Title class="text-3xl"
-                >Gerenciamento de Solicitações</Card.Title
-            >
-            <Card.Description
-                >Gerencie as solicitações de clientes e vendedores.</Card.Description
-            >
+            <Card.Title class="text-3xl flex items-center gap-2">
+                <FileText class="h-8 w-8 text-primary" />
+                Gerenciamento de Solicitações
+            </Card.Title>
+            <Card.Description>
+                Gerencie as solicitações de clientes e vendedores.
+            </Card.Description>
         </div>
         <Button
             class="ml-auto cursor-pointer"
@@ -157,28 +159,28 @@
                     <Table.Head>Cliente</Table.Head>
                     <Table.Head>Data</Table.Head>
                     <Table.Head>Situação</Table.Head>
-                    <Table.Head class="w-[100px]"></Table.Head>
+                    <Table.Head class="w-12.5"></Table.Head>
                 </Table.Row>
             </Table.Header>
             <Table.Body>
                 {#each filteredSolicitacoes as sol (sol.id)}
                     <Table.Row>
-                        <Table.Cell class="font-medium text-primary"
-                            >{sol.numero}</Table.Cell
-                        >
-                        <Table.Cell
-                            >{vendedores.find((v) => v.id === sol.vendedor_id)
-                                ?.nome || "—"}</Table.Cell
-                        >
-                        <Table.Cell
-                            >{clientes.find((c) => c.id === sol.cliente_id)
-                                ?.nome || "—"}</Table.Cell
-                        >
-                        <Table.Cell
-                            >{new Date(sol.data_solicitacao).toLocaleDateString(
+                        <Table.Cell class="font-medium text-primary">
+                            {sol.numero}
+                        </Table.Cell>
+                        <Table.Cell>
+                            {vendedores.find((v) => v.id === sol.vendedor_id)
+                                ?.nome || "—"}
+                        </Table.Cell>
+                        <Table.Cell>
+                            {clientes.find((c) => c.id === sol.cliente_id)
+                                ?.nome || "—"}
+                        </Table.Cell>
+                        <Table.Cell>
+                            {new Date(sol.data_solicitacao).toLocaleDateString(
                                 "pt-BR",
-                            )}</Table.Cell
-                        >
+                            )}
+                        </Table.Cell>
                         <Table.Cell>
                             <span
                                 class="px-2 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary"
@@ -189,20 +191,24 @@
                         <Table.Cell class="flex justify-end gap-2">
                             <Button
                                 variant="ghost"
-                                size="icon"
+                                size="icon-lg"
                                 onclick={() => {
                                     solicitacaoData = sol;
                                     dialog = "edit";
                                 }}
                             >
-                                <PencilLine class="h-4 w-4" />
+                                <PencilLine
+                                    class="h-4 w-4 stroke-3 stroke-lime-400"
+                                />
                             </Button>
                             <Button
                                 variant="ghost"
-                                size="icon"
+                                size="icon-lg"
                                 onclick={() => delete_(sol.id!)}
                             >
-                                <Trash2 class="h-4 w-4 text-destructive" />
+                                <Trash2
+                                    class="h-4 w-4 stroke-3 stroke-red-500"
+                                />
                             </Button>
                         </Table.Cell>
                     </Table.Row>

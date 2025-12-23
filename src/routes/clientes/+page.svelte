@@ -14,6 +14,7 @@
     import Plus from "@lucide/svelte/icons/plus";
     import Search from "@lucide/svelte/icons/search";
     import Trash2 from "@lucide/svelte/icons/trash-2";
+    import Users from "@lucide/svelte/icons/users";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
 
@@ -109,9 +110,11 @@
 
 <Card.Root class="m-10">
     <Card.Header class="flex w-full">
-        <Card.Title class="text-3xl">Gerenciamento de Clientes</Card.Title>
+        <Card.Title class="text-3xl flex items-center gap-2">
+            <Users class="h-8 w-8 text-primary" /> Gerenciamento de Clientes
+        </Card.Title>
         <Button
-            class="ml-auto cursor-pointer border-primary/50! hover:bg-primary/50! transition-colors duration-500!"
+            class="ml-auto cursor-pointer"
             variant="outline"
             size="lg"
             onclick={() => {
@@ -144,56 +147,43 @@
                     <Table.Head>CPF/CNPJ</Table.Head>
                     <Table.Head>Telefone</Table.Head>
                     <Table.Head>Cidade</Table.Head>
-                    <Table.Head class="w-[50px]"></Table.Head>
+                    <Table.Head class="w-12.5"></Table.Head>
                 </Table.Row>
             </Table.Header>
             <Table.Body>
                 {#each filteredClientes as client (client.id)}
                     <Table.Row>
-                        <Table.Cell class="font-medium"
-                            >{client.nome}</Table.Cell
-                        >
+                        <Table.Cell class="font-medium text-primary">
+                            {client.nome}
+                        </Table.Cell>
                         <Table.Cell>{client.cpf_cnpj}</Table.Cell>
                         <Table.Cell>{client.telefone}</Table.Cell>
-                        <Table.Cell>{client.cidade}</Table.Cell>
+                        <Table.Cell class="text-primary">
+                            {client.cidade}
+                        </Table.Cell>
                         <Table.Cell>
-                            <DropdownMenu.Root>
-                                <DropdownMenu.Trigger>
-                                    {#snippet child({ props })}
-                                        <Button
-                                            {...props}
-                                            variant="ghost"
-                                            size="icon"
-                                        >
-                                            <Ellipsis class="h-4 w-4" />
-                                        </Button>
-                                    {/snippet}
-                                </DropdownMenu.Trigger>
-                                <DropdownMenu.Content align="end">
-                                    <DropdownMenu.Group>
-                                        <DropdownMenu.Label
-                                            >Ações</DropdownMenu.Label
-                                        >
-                                        <DropdownMenu.Separator />
-                                        <DropdownMenu.Item
-                                            onclick={() => {
-                                                clientData = { ...client };
-                                                dialog = "edit";
-                                            }}
-                                        >
-                                            <PencilLine class="mr-2 h-4 w-4" />
-                                            Editar
-                                        </DropdownMenu.Item>
-                                        <DropdownMenu.Item
-                                            class="text-destructive focus:text-destructive"
-                                            onclick={() => delete_(client.id)}
-                                        >
-                                            <Trash2 class="mr-2 h-4 w-4" />
-                                            Excluir
-                                        </DropdownMenu.Item>
-                                    </DropdownMenu.Group>
-                                </DropdownMenu.Content>
-                            </DropdownMenu.Root>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onclick={() => {
+                                    clientData = { ...client };
+                                    dialog = "edit";
+                                }}
+                            >
+                                <PencilLine
+                                    class="h-4 w-4 stroke-lime-500! stroke-3"
+                                />
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                size="icon-lg"
+                                onclick={() => delete_(client.id)}
+                            >
+                                <Trash2
+                                    class="h-4 w-4 stroke-red-500! stroke-3"
+                                />
+                            </Button>
                         </Table.Cell>
                     </Table.Row>
                 {/each}

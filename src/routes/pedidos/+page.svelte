@@ -1,29 +1,26 @@
 <script lang="ts">
-    import BadgeCheck from "@lucide/svelte/icons/badge-check";
-    import X from "@lucide/svelte/icons/x";
-    import ClockFading from "@lucide/svelte/icons/clock-fading";
-    import Ban from "@lucide/svelte/icons/ban";
+    import { goto } from "$app/navigation";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
     import * as Table from "$lib/components/ui/table/index.js";
-    import Badge from "@/components/ui/badge/badge.svelte";
     import { Button } from "@/components/ui/button/index";
     import { Input } from "@/components/ui/input/index";
     import { Label } from "@/components/ui/label/index";
     import db, { queryHelper } from "@/db/db.svelte";
     import type { Pedido, PedidoItem } from "@/types";
-    import Ellipsis from "@lucide/svelte/icons/ellipsis";
+    import BadgeCheck from "@lucide/svelte/icons/badge-check";
+    import Ban from "@lucide/svelte/icons/ban";
+    import ClockFading from "@lucide/svelte/icons/clock-fading";
+    import Eye from "@lucide/svelte/icons/eye";
+    import Handbag from "@lucide/svelte/icons/handbag";
     import PencilLine from "@lucide/svelte/icons/pencil-line";
     import Plus from "@lucide/svelte/icons/plus";
-    import Receipt from "@lucide/svelte/icons/receipt";
-    import Trash2 from "@lucide/svelte/icons/trash-2";
     import Search from "@lucide/svelte/icons/search";
-    import Eye from "@lucide/svelte/icons/eye";
+    import Trash2 from "@lucide/svelte/icons/trash-2";
+    import X from "@lucide/svelte/icons/x";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
     import ReceiptDialog from "./receipt-dialog.svelte";
-    import { goto } from "$app/navigation";
 
     const formatter = new Intl.DateTimeFormat("pt-BR", {
         day: "2-digit",
@@ -112,7 +109,7 @@
         try {
             const ordersList = (await db.select(
                 `
-                SELECT p.*, c.nome as cliente_nome, v.nome as vendedor_nome 
+                SELECT p.*, c.nome as cliente_nome, v.nome as vendedor_nome
                 FROM pedidos p
                 LEFT JOIN clientes c ON p.cliente_id = c.id
                 LEFT JOIN vendedores v ON p.vendedor_id = v.id
@@ -149,9 +146,12 @@
 
 <Card.Root class="m-10">
     <Card.Header class="flex w-full">
-        <Card.Title class="text-3xl">Gerenciamento de Pedidos</Card.Title>
+        <Card.Title class="text-3xl flex items-center gap-2">
+            <Handbag class="h-8 w-8 text-primary" />
+            Gerenciamento de Pedidos
+        </Card.Title>
         <Button
-            class="ml-auto cursor-pointer border-primary/50! hover:bg-primary/50! transition-colors duration-500!"
+            class="ml-auto cursor-pointer"
             variant="outline"
             size="lg"
             onclick={() => {
@@ -187,7 +187,7 @@
                     <Table.Head>Data</Table.Head>
                     <Table.Head>Valor Total</Table.Head>
                     <Table.Head>Situação</Table.Head>
-                    <Table.Head></Table.Head>
+                    <Table.Head class="w-12.5"></Table.Head>
                 </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -213,67 +213,37 @@
                             {/if}
                         </Table.Cell>
                         <Table.Cell>
-                            <DropdownMenu.Root>
-                                <DropdownMenu.Trigger>
-                                    {#snippet child({ props })}
-                                        <Button
-                                            {...props}
-                                            variant="ghost"
-                                            size="icon"
-                                        >
-                                            <Ellipsis />
-                                        </Button>
-                                    {/snippet}
-                                </DropdownMenu.Trigger>
-                                <DropdownMenu.Content>
-                                    <DropdownMenu.Group>
-                                        <DropdownMenu.Item
-                                            class="group"
-                                            onSelect={() => {
-                                                orderData = order;
-                                                receipt = true;
-                                            }}
-                                        >
-                                            Detalhes
-                                            <Receipt
-                                                class="ml-auto group-hover:stroke-amber-300 transition-colors duration-200"
-                                            />
-                                        </DropdownMenu.Item>
-                                        <DropdownMenu.Item
-                                            class="group"
-                                            onSelect={() => {
-                                                goto(`/pedidos/${order.id}`);
-                                            }}
-                                        >
-                                            Ver Página
-                                            <Eye
-                                                class="ml-auto group-hover:stroke-primary transition-colors duration-200"
-                                            />
-                                        </DropdownMenu.Item>
-                                        <DropdownMenu.Item
-                                            class="group"
-                                            onSelect={() => {
-                                                orderData = order;
-                                                dialog = "edit";
-                                            }}
-                                        >
-                                            Editar
-                                            <PencilLine
-                                                class="ml-auto group-hover:stroke-lime-400 transition-colors duration-200"
-                                            />
-                                        </DropdownMenu.Item>
-                                        <DropdownMenu.Item
-                                            class="group"
-                                            onclick={() => delete_(order.id)}
-                                        >
-                                            Excluir
-                                            <Trash2
-                                                class="ml-auto group-hover:stroke-red-600 transition-colors duration-200"
-                                            />
-                                        </DropdownMenu.Item>
-                                    </DropdownMenu.Group>
-                                </DropdownMenu.Content>
-                            </DropdownMenu.Root>
+                            <Button
+                                variant="ghost"
+                                size="icon-lg"
+                                onclick={() => {
+                                    goto(`/pedidos/${order.id}`);
+                                }}
+                            >
+                                <Eye class="h-4 w-4 stroke-3 stroke-primary" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon-lg"
+                                class="group"
+                                onclick={() => {
+                                    orderData = order;
+                                    dialog = "edit";
+                                }}
+                            >
+                                <PencilLine
+                                    class="h-4 w-4 stroke-3 stroke-lime-400"
+                                />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon-lg"
+                                onclick={() => delete_(order.id)}
+                            >
+                                <Trash2
+                                    class="h-4 w-4 stroke-3 stroke-red-500"
+                                />
+                            </Button>
                         </Table.Cell>
                     </Table.Row>
                 {:else}

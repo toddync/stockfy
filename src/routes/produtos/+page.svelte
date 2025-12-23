@@ -1,19 +1,19 @@
 <script lang="ts">
+    import Package from "@lucide/svelte/icons/package";
+    import { Button } from "$lib/components/ui/button/index";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-    import * as Table from "$lib/components/ui/table/index.js";
-    import * as Select from "$lib/components/ui/select/index.js";
-    import { Button } from "$lib/components/ui/button/index";
     import { Input } from "$lib/components/ui/input/index";
     import { Label } from "$lib/components/ui/label/index";
-    import db, { queryHelper } from "@/db/db.svelte";
+    import * as Table from "$lib/components/ui/table/index.js";
     import type { Produto, ProdutoGrupo } from "$lib/types";
+    import db, { queryHelper } from "@/db/db.svelte";
     import Ellipsis from "@lucide/svelte/icons/ellipsis";
     import PencilLine from "@lucide/svelte/icons/pencil-line";
     import Plus from "@lucide/svelte/icons/plus";
-    import Trash2 from "@lucide/svelte/icons/trash-2";
     import Search from "@lucide/svelte/icons/search";
+    import Trash2 from "@lucide/svelte/icons/trash-2";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
 
@@ -106,8 +106,8 @@
 
             produtos = (await db.select(
                 `
-                SELECT p.*, (SELECT SUM(estoque_atual) FROM produto_variacoes WHERE produto_id = p.id) as estoque_atual 
-                FROM produtos p 
+                SELECT p.*, (SELECT SUM(estoque_atual) FROM produto_variacoes WHERE produto_id = p.id) as estoque_atual
+                FROM produtos p
                 LIMIT $1 OFFSET $2
             `,
                 [itemsPerPage, offset],
@@ -151,10 +151,13 @@
 <Card.Root class="m-10">
     <Card.Header class="flex flex-row items-center">
         <div>
-            <Card.Title class="text-3xl">Gerenciamento de Produtos</Card.Title>
-            <Card.Description
-                >Gerencie o catálogo de produtos e seus detalhes.</Card.Description
-            >
+            <Card.Title class="text-3xl flex items-center gap-2">
+                <Package class="h-8 w-8 text-primary" />
+                Gerenciamento de Produtos
+            </Card.Title>
+            <Card.Description>
+                Gerencie o catálogo de produtos e seus detalhes.
+            </Card.Description>
         </div>
         <Button
             class="ml-auto cursor-pointer"
@@ -192,7 +195,7 @@
                     <Table.Head>Grupo</Table.Head>
                     <Table.Head class="text-right">Preço Venda</Table.Head>
                     <Table.Head class="text-right">Estoque</Table.Head>
-                    <Table.Head class="w-[50px]"></Table.Head>
+                    <Table.Head class="w-12.5"></Table.Head>
                 </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -217,43 +220,27 @@
                             {produto.estoque_atual ?? "N/A"}
                         </Table.Cell>
                         <Table.Cell>
-                            <DropdownMenu.Root>
-                                <DropdownMenu.Trigger>
-                                    {#snippet child({ props })}
-                                        <Button
-                                            {...props}
-                                            variant="ghost"
-                                            size="icon"
-                                        >
-                                            <Ellipsis class="h-4 w-4" />
-                                        </Button>
-                                    {/snippet}
-                                </DropdownMenu.Trigger>
-                                <DropdownMenu.Content align="end">
-                                    <DropdownMenu.Group>
-                                        <DropdownMenu.Label
-                                            >Ações</DropdownMenu.Label
-                                        >
-                                        <DropdownMenu.Separator />
-                                        <DropdownMenu.Item
-                                            onclick={() => {
-                                                produtoData = { ...produto };
-                                                dialog = "edit";
-                                            }}
-                                        >
-                                            <PencilLine class="mr-2 h-4 w-4" />
-                                            Editar
-                                        </DropdownMenu.Item>
-                                        <DropdownMenu.Item
-                                            class="text-destructive focus:text-destructive"
-                                            onclick={() => delete_(produto.id)}
-                                        >
-                                            <Trash2 class="mr-2 h-4 w-4" />
-                                            Excluir
-                                        </DropdownMenu.Item>
-                                    </DropdownMenu.Group>
-                                </DropdownMenu.Content>
-                            </DropdownMenu.Root>
+                            <Button
+                                variant="ghost"
+                                size="icon-lg"
+                                onclick={() => {
+                                    produtoData = { ...produto };
+                                    dialog = "edit";
+                                }}
+                            >
+                                <PencilLine
+                                    class="h-4 w-4 stroke-3 stroke-lime-400"
+                                />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon-lg"
+                                onclick={() => delete_(produto.id)}
+                            >
+                                <Trash2
+                                    class="h-4 w-4 stroke-3 stroke-red-500"
+                                />
+                            </Button>
                         </Table.Cell>
                     </Table.Row>
                 {:else}

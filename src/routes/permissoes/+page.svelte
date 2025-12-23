@@ -153,26 +153,28 @@
                                 {p.chave}
                             </code>
                         </Table.Cell>
-                        <Table.Cell class="text-muted-foreground"
-                            >{p.descricao || "—"}</Table.Cell
-                        >
+                        <Table.Cell>{p.descricao || "—"}</Table.Cell>
                         <Table.Cell class="flex justify-end gap-2">
                             <Button
                                 variant="ghost"
-                                size="icon"
+                                size="icon-lg"
                                 onclick={() => {
                                     permissaoData = p;
                                     dialog = "edit";
                                 }}
                             >
-                                <PencilLine class="h-4 w-4" />
+                                <PencilLine
+                                    class="h-4 w-4 stroke-3 stroke-lime-400"
+                                />
                             </Button>
                             <Button
                                 variant="ghost"
-                                size="icon"
+                                size="icon-lg"
                                 onclick={() => delete_(p.id!)}
                             >
-                                <Trash2 class="h-4 w-4 text-destructive" />
+                                <Trash2
+                                    class="h-4 w-4 stroke-3 stroke-red-500"
+                                />
                             </Button>
                         </Table.Cell>
                     </Table.Row>
@@ -192,7 +194,7 @@
 </Card.Root>
 
 <Dialog.Root open={dialog != null} onOpenChange={(e) => !e && (dialog = null)}>
-    <Dialog.Content class="sm:max-w-[425px]">
+    <Dialog.Content class="sm:max-w-106.25">
         <Dialog.Header>
             <Dialog.Title
                 >{dialog === "new"
@@ -222,9 +224,9 @@
             </div>
         </div>
         <Dialog.Footer>
-            <Button variant="outline" onclick={() => (dialog = null)}
-                >Cancelar</Button
-            >
+            <Button variant="outline" onclick={() => (dialog = null)}>
+                Cancelar
+            </Button>
             <Button onclick={save}>Salvar</Button>
         </Dialog.Footer>
     </Dialog.Content>

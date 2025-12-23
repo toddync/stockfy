@@ -1,4 +1,5 @@
 <script lang="ts">
+    import MapPin from "@lucide/svelte/icons/map-pin";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import * as Table from "$lib/components/ui/table/index.js";
@@ -97,10 +98,13 @@
 <Card.Root class="m-10">
     <Card.Header class="flex flex-row items-center">
         <div>
-            <Card.Title class="text-3xl">Gerenciamento de Praças</Card.Title>
-            <Card.Description
-                >Controle de regiões e áreas de atendimento.</Card.Description
-            >
+            <Card.Title class="text-3xl flex items-center gap-2">
+                <MapPin class="h-8 w-8 text-primary" />
+                Gerenciamento de Praças
+            </Card.Title>
+            <Card.Description>
+                Controle de regiões e áreas de atendimento.
+            </Card.Description>
         </div>
         <Button
             class="ml-auto cursor-pointer"
@@ -135,33 +139,37 @@
                 <Table.Row>
                     <Table.Head>Código</Table.Head>
                     <Table.Head>Nome</Table.Head>
-                    <Table.Head class="w-[100px]"></Table.Head>
+                    <Table.Head class="w-12.5"></Table.Head>
                 </Table.Row>
             </Table.Header>
             <Table.Body>
                 {#each filteredPracas as p (p.id)}
                     <Table.Row>
                         <Table.Cell class="font-bold">{p.codigo}</Table.Cell>
-                        <Table.Cell class="font-medium text-primary"
-                            >{p.nome}</Table.Cell
-                        >
+                        <Table.Cell class="font-medium text-primary">
+                            {p.nome}
+                        </Table.Cell>
                         <Table.Cell class="flex justify-end gap-2">
                             <Button
                                 variant="ghost"
-                                size="icon"
+                                size="icon-lg"
                                 onclick={() => {
                                     pracaData = p;
                                     dialog = "edit";
                                 }}
                             >
-                                <PencilLine class="h-4 w-4" />
+                                <PencilLine
+                                    class="h-4 w-4 stroke-3 stroke-lime-400"
+                                />
                             </Button>
                             <Button
                                 variant="ghost"
-                                size="icon"
+                                size="icon-lg"
                                 onclick={() => delete_(p.id!)}
                             >
-                                <Trash2 class="h-4 w-4 text-destructive" />
+                                <Trash2
+                                    class="h-4 w-4 stroke-3 stroke-red-500"
+                                />
                             </Button>
                         </Table.Cell>
                     </Table.Row>
@@ -181,7 +189,7 @@
 </Card.Root>
 
 <Dialog.Root open={dialog != null} onOpenChange={(e) => !e && (dialog = null)}>
-    <Dialog.Content class="sm:max-w-[425px]">
+    <Dialog.Content class="sm:max-w-106.25">
         <Dialog.Header>
             <Dialog.Title
                 >{dialog === "new"
@@ -211,9 +219,9 @@
             </div>
         </div>
         <Dialog.Footer>
-            <Button variant="outline" onclick={() => (dialog = null)}
-                >Cancelar</Button
-            >
+            <Button variant="outline" onclick={() => (dialog = null)}>
+                Cancelar
+            </Button>
             <Button onclick={save}>Salvar</Button>
         </Dialog.Footer>
     </Dialog.Content>

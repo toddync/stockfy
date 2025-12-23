@@ -6,12 +6,16 @@
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Table from "$lib/components/ui/table/index.js";
     import type { Cliente, Pedido, PedidoItem, Vendedor } from "$lib/types";
+    import db from "@/db/db.svelte";
     import ChevronLeft from "@lucide/svelte/icons/chevron-left";
     import Printer from "@lucide/svelte/icons/printer";
     import { onMount } from "svelte";
+    import { Spinner } from "$lib/components/ui/spinner";
+
+    type OrderItem = PedidoItem & { codigo: string; nome: string };
 
     let pedido = $state<Pedido | null>(null);
-    let items = $state<Array<PedidoItem>>([]);
+    let items = $state<Array<OrderItem>>([]);
     let cliente = $state<Cliente | null>(null);
     let vendedor = $state<Vendedor | null>(null);
     let loading = $state(true);
@@ -22,25 +26,35 @@
         loading = true;
         try {
             const [pRes, iRes] = await Promise.all([
-                fetch(`http://localhost:3000/api/pedidos/${pedidoId}`),
-                fetch(`http://localhost:3000/api/pedidos/${pedidoId}/itens`),
+                db.select("SELECT * FROM pedidos WHERE id = $1 LIMIT 1", [
+                    pedidoId,
+                ]),
+                db.select(
+                    `
+                    SELECT pi.*, p.descricao as nome, p.codigo as codigo
+                    FROM pedido_itens pi
+                    LEFT JOIN produtos p ON pi.produto_id = p.id
+                    WHERE pedido_id = $1`,
+                    [pedidoId],
+                ),
             ]);
-            pedido = await pRes.json();
-            items = await iRes.json();
+            pedido = (pRes as Array<Pedido>)[0];
+            items = iRes as Array<OrderItem>;
 
             if (pedido) {
                 const [cRes, vRes] = await Promise.all([
-                    fetch(
-                        `http://localhost:3000/api/clientes/${pedido.cliente_id}`,
-                    ),
+                    db.select("SELECT * FROM clientes WHERE id = $1", [
+                        pedido.cliente_id,
+                    ]),
                     pedido.vendedor_id
-                        ? fetch(
-                              `http://localhost:3000/api/vendedores/${pedido.vendedor_id}`,
-                          )
+                        ? db.select("SELECT * FROM vendedores WHERE id = $1", [
+                              pedido.vendedor_id,
+                          ])
                         : Promise.resolve(null),
                 ]);
-                cliente = await cRes.json();
-                vendedor = vRes ? await vRes.json() : null;
+
+                cliente = (cRes as Array<Cliente>)[0];
+                vendedor = vRes ? (vRes as Array<Vendedor>)[0] : null;
             }
         } catch (e: any) {
             console.error(e);
@@ -59,7 +73,7 @@
     }
 </script>
 
-<div class="p-6 max-w-4xl mx-auto space-y-6">
+<div class="p-6 w-full mx-auto space-y-6">
     <div class="flex items-center gap-4">
         <Button variant="ghost" size="icon" onclick={() => goto("/pedidos")}>
             <ChevronLeft class="h-6 w-6" />
@@ -76,19 +90,17 @@
     </div>
 
     {#if loading}
-        <div class="flex justify-center py-20">
-            <div
-                class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
-            ></div>
+        <div class="flex h-[calc(100svh-32px)]">
+            <Spinner class="h-12 w-12 stroke-primary mx-auto my-auto" />
         </div>
     {:else if pedido}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card.Root class="md:col-span-2">
                 <Card.Header>
                     <div class="flex justify-between items-center">
-                        <Card.Title class="text-2xl text-primary"
-                            >#{pedido.numero_pedido}</Card.Title
-                        >
+                        <Card.Title class="text-2xl text-primary">
+                            #{pedido.numero_pedido}
+                        </Card.Title>
                         <Badge
                             variant="outline"
                             class="text-sm font-bold bg-primary/10"
@@ -107,8 +119,9 @@
                         <div class="space-y-1">
                             <span
                                 class="text-muted-foreground block text-xs uppercase tracking-wider font-bold"
-                                >Cliente</span
                             >
+                                Cliente
+                            </span>
                             <p class="text-lg font-semibold">
                                 {cliente?.nome || "—"}
                             </p>
@@ -116,8 +129,9 @@
                         <div class="space-y-1">
                             <span
                                 class="text-muted-foreground block text-xs uppercase tracking-wider font-bold"
-                                >Vendedor</span
                             >
+                                Vendedor
+                            </span>
                             <p class="text-lg font-semibold">
                                 {vendedor?.nome || "—"}
                             </p>
@@ -131,43 +145,42 @@
                                 <Table.Row>
                                     <Table.Head>Cód</Table.Head>
                                     <Table.Head>Produto</Table.Head>
-                                    <Table.Head class="text-center"
-                                        >Qtd</Table.Head
-                                    >
-                                    <Table.Head class="text-right"
-                                        >Unitário</Table.Head
-                                    >
-                                    <Table.Head class="text-right"
-                                        >Subtotal</Table.Head
-                                    >
+                                    <Table.Head class="text-center">
+                                        Qtd
+                                    </Table.Head>
+                                    <Table.Head class="text-right">
+                                        Unitário
+                                    </Table.Head>
+                                    <Table.Head class="text-right">
+                                        Subtotal
+                                    </Table.Head>
                                 </Table.Row>
                             </Table.Header>
                             <Table.Body>
                                 {#each items as item}
                                     <Table.Row>
-                                        <Table.Cell class="font-mono text-xs"
-                                            >{item.produto_id}</Table.Cell
-                                        >
+                                        <Table.Cell class="font-mono text-xs">
+                                            {item.codigo}
+                                        </Table.Cell>
                                         <Table.Cell class="font-medium">
-                                            {item.produto_id ||
-                                                "Produto"}</Table.Cell
+                                            {item.nome || "Produto"}
+                                        </Table.Cell>
+                                        <Table.Cell class="text-center">
+                                            {item.quantidade_saida -
+                                                item.quantidade_retorno}
+                                        </Table.Cell>
+                                        <Table.Cell class="text-right">
+                                            {formatCurrency(item.preco_venda)}
+                                        </Table.Cell>
+                                        <Table.Cell
+                                            class="text-right font-bold"
                                         >
-                                        <Table.Cell class="text-center"
-                                            >{item.quantidade_saida -
-                                                item.quantidade_retorno}</Table.Cell
-                                        >
-                                        <Table.Cell class="text-right"
-                                            >{formatCurrency(
-                                                item.preco_venda,
-                                            )}</Table.Cell
-                                        >
-                                        <Table.Cell class="text-right font-bold"
-                                            >{formatCurrency(
+                                            {formatCurrency(
                                                 (item.preco_venda || 0) *
                                                     (item.quantidade_saida -
                                                         item.quantidade_retorno),
-                                            )}</Table.Cell
-                                        >
+                                            )}
+                                        </Table.Cell>
                                     </Table.Row>
                                 {/each}
                             </Table.Body>
@@ -183,38 +196,39 @@
                     </Card.Header>
                     <Card.Content class="space-y-4">
                         <div class="flex justify-between text-sm">
-                            <span class="text-muted-foreground"
-                                >Valor Bruto</span
-                            >
+                            <span class="text-muted-foreground">
+                                Valor Bruto
+                            </span>
                             <span>{formatCurrency(pedido.valor_total)}</span>
                         </div>
                         <div class="flex justify-between text-sm">
-                            <span class="text-muted-foreground">Valor Pago</span
-                            >
-                            <span class="text-green-600 font-semibold"
-                                >{formatCurrency(pedido.valor_pago)}</span
-                            >
+                            <span class="text-muted-foreground">
+                                Valor Pago
+                            </span>
+                            <span class="text-green-600 font-semibold">
+                                {formatCurrency(pedido.valor_pago)}
+                            </span>
                         </div>
                         {#if (pedido.valor_total || 0) - (pedido.valor_pago || 0) > 0}
                             <div class="flex justify-between text-sm">
-                                <span class="text-muted-foreground"
-                                    >Saldo Devedor</span
-                                >
-                                <span class="text-destructive font-bold"
-                                    >{formatCurrency(
+                                <span class="text-muted-foreground">
+                                    Saldo Devedor
+                                </span>
+                                <span class="text-red-600 font-bold">
+                                    {formatCurrency(
                                         (pedido.valor_total || 0) -
                                             (pedido.valor_pago || 0),
-                                    )}</span
-                                >
+                                    )}
+                                </span>
                             </div>
                         {/if}
                         <div
                             class="border-t pt-4 flex justify-between items-center"
                         >
-                            <span class="font-bold text-lg">Total</span>
-                            <span class="text-2xl font-black text-primary"
-                                >{formatCurrency(pedido.valor_total)}</span
-                            >
+                            <span class="font-bold text-lg mr-5"> Total: </span>
+                            <span class="text-2xl font-black text-primary">
+                                {formatCurrency(pedido.valor_total)}
+                            </span>
                         </div>
                     </Card.Content>
                 </Card.Root>
@@ -222,9 +236,9 @@
                 {#if pedido.solicitacao_numero}
                     <Card.Root class="bg-primary/5">
                         <Card.Header class="pb-2">
-                            <Card.Title class="text-sm"
-                                >Solicitação Relacionada</Card.Title
-                            >
+                            <Card.Title class="text-sm">
+                                Solicitação Relacionada
+                            </Card.Title>
                         </Card.Header>
                         <Card.Content>
                             <p class="font-bold text-lg">
@@ -238,9 +252,9 @@
     {:else}
         <div class="text-center py-20">
             <h2 class="text-xl font-bold">Pedido não encontrado.</h2>
-            <Button variant="link" onclick={() => goto("/pedidos")}
-                >Voltar para a lista</Button
-            >
+            <Button variant="link" onclick={() => goto("/pedidos")}>
+                Voltar para a lista
+            </Button>
         </div>
     {/if}
 </div>

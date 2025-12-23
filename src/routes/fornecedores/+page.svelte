@@ -10,10 +10,10 @@
     import { Label } from "@/components/ui/label/index";
     import db, { queryHelper } from "@/db/db.svelte";
     import type { Fornecedor } from "@/types";
-    import Ellipsis from "@lucide/svelte/icons/ellipsis";
     import PencilLine from "@lucide/svelte/icons/pencil-line";
     import Plus from "@lucide/svelte/icons/plus";
     import Trash2 from "@lucide/svelte/icons/trash-2";
+    import Truck from "@lucide/svelte/icons/truck";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
 
@@ -92,9 +92,12 @@
 
 <Card.Root class="m-10">
     <Card.Header class="flex w-full">
-        <Card.Title class="text-3xl">Gerenciamento de Fornecedores</Card.Title>
+        <Card.Title class="text-3xl flex items-center gap-2">
+            <Truck class="h-8 w-8 text-primary" />
+            Gerenciamento de Fornecedores
+        </Card.Title>
         <Button
-            class="ml-auto cursor-pointer border-primary/50! hover:bg-primary/50! transition-colors duration-500!"
+            class="ml-auto cursor-pointer"
             variant="outline"
             size="lg"
             onclick={() => {
@@ -116,7 +119,7 @@
                     <Table.Head>Cidade</Table.Head>
                     <Table.Head>Telefone</Table.Head>
                     <Table.Head>Ativo</Table.Head>
-                    <Table.Head></Table.Head>
+                    <Table.Head class="w-12.5"></Table.Head>
                 </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -127,62 +130,40 @@
                         <Table.Cell>{supplier.cpf || supplier.cnpj}</Table.Cell>
                         <Table.Cell>{supplier.cidade}</Table.Cell>
                         <Table.Cell>{supplier.telefone}</Table.Cell>
-                        <Table.Cell>{supplier.ativo ? "Sim" : "Não"}</Table.Cell
-                        >
                         <Table.Cell>
-                            <DropdownMenu.Root>
-                                <DropdownMenu.Trigger>
-                                    {#snippet child({ props })}
-                                        <Button
-                                            {...props}
-                                            variant="ghost"
-                                            size="icon"
-                                        >
-                                            <Ellipsis />
-                                        </Button>
-                                    {/snippet}
-                                </DropdownMenu.Trigger>
-                                <DropdownMenu.Content>
-                                    <DropdownMenu.Group>
-                                        <DropdownMenu.Label>
-                                            Ações
-                                        </DropdownMenu.Label>
-                                        <DropdownMenu.Separator />
-                                        <DropdownMenu.Item
-                                            class="group"
-                                            onSelect={() => {
-                                                supplierData = { ...supplier };
+                            {supplier.ativo ? "Sim" : "Não"}
+                        </Table.Cell>
+                        <Table.Cell>
+                            <Button
+                                variant="ghost"
+                                size="icon-lg"
+                                onclick={() => {
+                                    supplierData = { ...supplier };
 
-                                                if (supplierData.cpf) {
-                                                    document.kind = "CPF";
-                                                    document.value =
-                                                        supplierData.cpf;
-                                                } else if (supplierData.cnpj) {
-                                                    document.kind = "CNPJ";
-                                                    document.value =
-                                                        supplierData.cnpj;
-                                                }
+                                    if (supplierData.cpf) {
+                                        document.kind = "CPF";
+                                        document.value = supplierData.cpf;
+                                    } else if (supplierData.cnpj) {
+                                        document.kind = "CNPJ";
+                                        document.value = supplierData.cnpj;
+                                    }
 
-                                                dialog = "edit";
-                                            }}
-                                        >
-                                            Editar
-                                            <PencilLine
-                                                class="ml-auto group-hover:stroke-lime-400 transition-colors duration-200"
-                                            />
-                                        </DropdownMenu.Item>
-                                        <DropdownMenu.Item
-                                            class="group"
-                                            onclick={() => delete_(supplier.id)}
-                                        >
-                                            Excluir
-                                            <Trash2
-                                                class="ml-auto group-hover:stroke-red-600 transition-colors duration-200"
-                                            />
-                                        </DropdownMenu.Item>
-                                    </DropdownMenu.Group>
-                                </DropdownMenu.Content>
-                            </DropdownMenu.Root>
+                                    dialog = "edit";
+                                }}
+                            >
+                                <PencilLine
+                                    class="h-4 w-4 stroke-3 stroke-lime-400"
+                                />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon-lg"
+                                onclick={() => delete_(supplier.id)}
+                            >
+                                <Trash2
+                                    class="h-4 w-4 stroke-3 stroke-red-500"
+                                />
+                            </Button>
                         </Table.Cell>
                     </Table.Row>
                 {/each}

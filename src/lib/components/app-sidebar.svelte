@@ -2,6 +2,7 @@
     import { goto } from "$app/navigation";
     import * as Sidebar from "$lib/components/ui/sidebar/index.js";
     import Boxes from "@lucide/svelte/icons/boxes";
+    import Package from "@lucide/svelte/icons/package";
     import DolarSign from "@lucide/svelte/icons/dollar-sign";
     import FileText from "@lucide/svelte/icons/file-text";
     import HandBag from "@lucide/svelte/icons/handbag";
@@ -13,14 +14,17 @@
     import Tags from "@lucide/svelte/icons/tags";
     import Truck from "@lucide/svelte/icons/truck";
     import Undo2 from "@lucide/svelte/icons/undo-2";
-    import UserCog from "@lucide/svelte/icons/user-cog";
+    import ShieldUser from "@lucide/svelte/icons/shield-user";
     import Users from "@lucide/svelte/icons/users";
     import Wallet from "@lucide/svelte/icons/wallet";
-
-    let { toggle } = Sidebar.useSidebar();
+    import PathBtn from "./path-btn.svelte";
 </script>
 
-<Sidebar.Root variant="floating" collapsible="icon">
+<Sidebar.Root
+    variant="floating"
+    collapsible="icon"
+    class="mt-8 h-[calc(100svh-32px)]!"
+>
     <Sidebar.Header>
         <Sidebar.Menu>
             <Sidebar.MenuItem>
@@ -41,159 +45,74 @@
     <Sidebar.Separator />
     <Sidebar.Content>
         <Sidebar.Group>
-            <Sidebar.Menu>
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("clientes")}
-                    >
-                        <Users class="stroke-3!" /> Clientes
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+            <Sidebar.Menu class="[&_svg]:stroke-3!">
+                <PathBtn path="/clientes">
+                    <Users /> Clientes
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("vendedores")}
-                    >
-                        <DolarSign class="stroke-3!" /> Vendedores
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/vendedores">
+                    <DolarSign /> Vendedores
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("contas")}
-                    >
-                        <Wallet class="stroke-3!" /> Financeiro
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/contas">
+                    <Wallet /> Financeiro
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("fornecedores")}
-                    >
-                        <Truck class="stroke-3!" /> Fornecedores
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/fornecedores">
+                    <Truck /> Fornecedores
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("produto-grupos")}
-                    >
-                        <Boxes class="stroke-3!" /> Grupos
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/produto-grupos">
+                    <Boxes /> Grupos
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("compras")}
-                    >
-                        <ShoppingBag class="stroke-3!" /> Compras
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/compras">
+                    <ShoppingBag /> Compras
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("pedidos")}
-                    >
-                        <HandBag class="stroke-3!" /> Pedidos
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/pedidos">
+                    <HandBag /> Pedidos
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("devolucoes")}
-                    >
-                        <Undo2 class="stroke-3!" /> Devoluções
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/devolucoes">
+                    <Undo2 /> Devoluções
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("pracas")}
-                    >
-                        <MapPin class="stroke-3!" /> Praças
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/pracas">
+                    <MapPin /> Praças
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("solicitacoes")}
-                    >
-                        <FileText class="stroke-3!" /> Solicitações
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/solicitacoes">
+                    <FileText /> Solicitações
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("residuos")}
-                    >
-                        <Recycle class="stroke-3!" /> Resíduos
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/residuos">
+                    <Recycle /> Resíduos
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("permissoes")}
-                    >
-                        <ShieldCheck class="stroke-3!" /> Permissões
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/permissoes">
+                    <ShieldCheck /> Permissões
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("etiquetas")}
-                    >
-                        <Tags class="stroke-3!" /> Etiquetas
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/etiquetas">
+                    <Tags /> Etiquetas
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer whitespace-nowrap"
-                        onclick={() => goto("usuario-permissoes")}
-                    >
-                        <UserCog class="stroke-3!" /> Usuários/Permissões
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/usuario-permissoes">
+                    <ShieldUser /> Usuários/Permissões
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("produtos")}
-                    >
-                        <Boxes class="stroke-3!" /> Produtos
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/produtos">
+                    <Package /> Produtos
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("usuarios")}
-                    >
-                        <Users class="stroke-3!" /> Usuários
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/usuarios">
+                    <Users /> Usuários
+                </PathBtn>
 
-                <Sidebar.MenuItem>
-                    <Sidebar.MenuButton
-                        class="font-bold cursor-pointer"
-                        onclick={() => goto("rotas")}
-                    >
-                        <Route class="stroke-3!" /> Rotas
-                    </Sidebar.MenuButton>
-                </Sidebar.MenuItem>
+                <PathBtn path="/rotas">
+                    <Route /> Rotas
+                </PathBtn>
             </Sidebar.Menu>
         </Sidebar.Group>
     </Sidebar.Content>

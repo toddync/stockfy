@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Boxes from "@lucide/svelte/icons/boxes";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
@@ -110,10 +111,13 @@
 <Card.Root class="m-10">
     <Card.Header class="flex flex-row items-center">
         <div>
-            <Card.Title class="text-3xl">Grupos de Produtos</Card.Title>
-            <Card.Description
-                >Gerencie as categorias e agrupamentos de seus produtos.</Card.Description
-            >
+            <Card.Title class="text-3xl flex items-center gap-2">
+                <Boxes class="h-8 w-8 text-primary" />
+                Grupos de Produtos
+            </Card.Title>
+            <Card.Description>
+                Gerencie as categorias e agrupamentos de seus produtos.
+            </Card.Description>
         </div>
         <Button
             class="ml-auto cursor-pointer"
@@ -148,54 +152,39 @@
                 <Table.Row>
                     <Table.Head>Código</Table.Head>
                     <Table.Head>Descrição</Table.Head>
-                    <Table.Head class="w-[50px]"></Table.Head>
+                    <Table.Head class="w-12.5"></Table.Head>
                 </Table.Row>
             </Table.Header>
             <Table.Body>
                 {#each filteredGrupos as grupo (grupo.id)}
                     <Table.Row>
-                        <Table.Cell class="font-medium"
-                            >{grupo.codigo}</Table.Cell
-                        >
+                        <Table.Cell class="font-medium">
+                            {grupo.codigo}
+                        </Table.Cell>
                         <Table.Cell>{grupo.descricao}</Table.Cell>
                         <Table.Cell>
-                            <DropdownMenu.Root>
-                                <DropdownMenu.Trigger>
-                                    {#snippet child({ props })}
-                                        <Button
-                                            {...props}
-                                            variant="ghost"
-                                            size="icon"
-                                        >
-                                            <Ellipsis class="h-4 w-4" />
-                                        </Button>
-                                    {/snippet}
-                                </DropdownMenu.Trigger>
-                                <DropdownMenu.Content align="end">
-                                    <DropdownMenu.Group>
-                                        <DropdownMenu.Label
-                                            >Ações</DropdownMenu.Label
-                                        >
-                                        <DropdownMenu.Separator />
-                                        <DropdownMenu.Item
-                                            onclick={() => {
-                                                grupoData = { ...grupo };
-                                                dialog = "edit";
-                                            }}
-                                        >
-                                            <PencilLine class="mr-2 h-4 w-4" />
-                                            Editar
-                                        </DropdownMenu.Item>
-                                        <DropdownMenu.Item
-                                            class="text-destructive focus:text-destructive"
-                                            onclick={() => delete_(grupo.id)}
-                                        >
-                                            <Trash2 class="mr-2 h-4 w-4" />
-                                            Excluir
-                                        </DropdownMenu.Item>
-                                    </DropdownMenu.Group>
-                                </DropdownMenu.Content>
-                            </DropdownMenu.Root>
+                            <Button
+                                variant="ghost"
+                                size="icon-lg"
+                                onclick={() => {
+                                    grupoData = { ...grupo };
+                                    dialog = "edit";
+                                }}
+                            >
+                                <PencilLine
+                                    class="h-4 w-4 stroke-3 stroke-lime-400"
+                                />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon-lg"
+                                class="text-destructive focus:text-destructive"
+                                onclick={() => delete_(grupo.id)}
+                            >
+                                <Trash2
+                                    class="h-4 w-4 stroke-3 stroke-red-500"
+                                />
+                            </Button>
                         </Table.Cell>
                     </Table.Row>
                 {:else}
@@ -221,7 +210,7 @@
         }
     }}
 >
-    <Dialog.Content class="sm:max-w-[425px]">
+    <Dialog.Content class="sm:max-w-106.25">
         <Dialog.Header>
             <Dialog.Title>
                 {dialog === "new" ? "Novo Grupo" : "Editar Grupo"}
@@ -251,9 +240,9 @@
         </div>
 
         <Dialog.Footer>
-            <Button variant="outline" onclick={() => (dialog = null)}
-                >Cancelar</Button
-            >
+            <Button variant="outline" onclick={() => (dialog = null)}>
+                Cancelar
+            </Button>
             <Button onclick={save}>Salvar</Button>
         </Dialog.Footer>
     </Dialog.Content>

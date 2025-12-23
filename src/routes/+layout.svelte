@@ -6,6 +6,7 @@
     import { onMount } from "svelte";
     import "./layout.css";
     import db from "@/db/db.svelte";
+    import TittleBar from "@/components/tittle-bar.svelte";
 
     let { children } = $props();
     let loaded = $state<boolean>(false);
@@ -21,11 +22,15 @@
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 <Toaster richColors position="top-center" />
 
-<Sidebar.Provider>
-    <AppSidebar />
-    <main class="flex-1 m-1">
-        {#if loaded}
-            {@render children?.()}
-        {/if}
-    </main>
-</Sidebar.Provider>
+<TittleBar />
+
+<main class="h-[calc(100svh-32px)]! mt-8 overflow-hidden">
+    <Sidebar.Provider>
+        <AppSidebar />
+        <main class="flex-1 p-1 overflow-auto max-h-[calc(100svh-32px)]!">
+            {#if loaded}
+                {@render children?.()}
+            {/if}
+        </main>
+    </Sidebar.Provider>
+</main>

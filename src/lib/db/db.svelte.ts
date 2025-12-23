@@ -34,8 +34,8 @@ class DB {
         return this.db!.execute(query, bindValues);
     }
 
-    select(query: string, bindValues: unknown[]) {
-        return this.db!.select(query, bindValues);
+    select<T>(query: string, bindValues: unknown[]): Promise<Array<T>> {
+        return this.db!.select<Array<T>>(query, bindValues);
     }
 
     close() {

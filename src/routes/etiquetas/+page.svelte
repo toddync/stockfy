@@ -163,7 +163,7 @@
                     <Table.Head>Cód. Vendedor</Table.Head>
                     <Table.Head>Nome Vendedor</Table.Head>
                     <Table.Head>Sobrenome</Table.Head>
-                    <Table.Head class="w-[100px]"></Table.Head>
+                    <Table.Head class="w-12.5"></Table.Head>
                 </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -187,20 +187,24 @@
                         <Table.Cell class="flex justify-end gap-2">
                             <Button
                                 variant="ghost"
-                                size="icon"
+                                size="icon-lg"
                                 onclick={() => {
                                     etiquetaData = e;
                                     dialog = "edit";
                                 }}
                             >
-                                <PencilLine class="h-4 w-4" />
+                                <PencilLine
+                                    class="h-4 w-4 stroke-3 stroke-lime-400"
+                                />
                             </Button>
                             <Button
                                 variant="ghost"
-                                size="icon"
+                                size="icon-lg"
                                 onclick={() => delete_(e.id!)}
                             >
-                                <Trash2 class="h-4 w-4 text-destructive" />
+                                <Trash2
+                                    class="h-4 w-4 stroke-3 stroke-red-500"
+                                />
                             </Button>
                         </Table.Cell>
                     </Table.Row>

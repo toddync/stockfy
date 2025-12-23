@@ -142,7 +142,7 @@
         try {
             compras = (await db.select(
                 `
-                SELECT c.*, f.razao_social as fornecedor_razao_social 
+                SELECT c.*, f.razao_social as fornecedor_razao_social
                 FROM compras c
                 JOIN fornecedores f ON c.fornecedor_id = f.id
             `,
@@ -187,7 +187,10 @@
 <Card.Root class="m-10">
     <Card.Header class="flex flex-row items-center">
         <div>
-            <Card.Title class="text-3xl">Compras & Pedidos</Card.Title>
+            <Card.Title class="text-3xl flex items-center gap-2">
+                <ShoppingBag class="h-8 w-8 text-primary" />
+                Compras & Pedidos
+            </Card.Title>
             <Card.Description>
                 Gerencie as entradas de estoque e pedidos aos fornecedores.
             </Card.Description>
@@ -226,7 +229,7 @@
                     <Table.Head>Nº Pedido</Table.Head>
                     <Table.Head>Fornecedor</Table.Head>
                     <Table.Head>Data</Table.Head>
-                    <Table.Head class="text-right">Valor Total</Table.Head>
+                    <Table.Head>Valor Total</Table.Head>
                     <Table.Head>Situação</Table.Head>
                 </Table.Row>
             </Table.Header>
@@ -243,7 +246,7 @@
                                 "pt-BR",
                             )}
                         </Table.Cell>
-                        <Table.Cell class="text-right font-medium">
+                        <Table.Cell class="font-medium">
                             {formatCurrency(compra.valor_total_pedido || 0)}
                         </Table.Cell>
                         <Table.Cell>
