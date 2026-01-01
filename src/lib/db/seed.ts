@@ -6,11 +6,16 @@ PRAGMA foreign_keys = OFF;
 -- 1. BASE TABLES
 -- ==========================================
 
+-- Praças
+INSERT INTO \`pracas\` (\`id\`, \`codigo\`, \`nome\`) VALUES
+(1, '001', 'Rio de Janeiro - Centro'),
+(2, '002', 'Niterói');
+
 -- Rotas
-INSERT INTO \`rotas\` (\`id\`, \`codigo\`, \`bairro\`, \`nome\`) VALUES
-(1, 'R001', 'Centro', 'Rota Central'),
-(2, 'R002', 'Zona Sul', 'Rota Costeira'),
-(3, 'R003', 'Zona Norte', 'Rota Industrial');
+INSERT INTO \`rotas\` (\`id\`, \`codigo\`, \`praca_id\`, \`bairro\`, \`nome\`) VALUES
+(1, 'R001', 1, 'Centro', 'Rota Central'),
+(2, 'R002', 2, 'Zona Sul', 'Rota Costeira'),
+(3, 'R003', 1, 'Zona Norte', 'Rota Industrial');
 
 -- Produto Grupos
 INSERT INTO \`produto_grupos\` (\`id\`, \`codigo\`, \`descricao\`) VALUES
@@ -25,9 +30,9 @@ INSERT INTO \`tags\` (\`id\`, \`nome\`) VALUES
 (3, 'Outlet');
 
 -- Vendedores
-INSERT INTO \`vendedores\` (\`id\`, \`codigo\`, \`nome\`, \`cpf\`, \`email\`, \`cidade\`, \`estado\`) VALUES
-(1, 'VEND01', 'Carlos Silva', '123.456.789-00', 'carlos@empresa.com', 'São Paulo', 'SP'),
-(2, 'VEND02', 'Mariana Souza', '987.654.321-00', 'mariana@empresa.com', 'Rio de Janeiro', 'RJ');
+INSERT INTO \`vendedores\` (\`id\`, \`codigo\`, \`nome\`, \`cpf\`, \`email\`, \`tabela_preco\`, \`cidade\`, \`estado\`) VALUES
+(1, 'VEND01', 'Carlos Silva', '123.456.789-00', 'carlos@empresa.com', 'A', 'São Paulo', 'SP'),
+(2, 'VEND02', 'Mariana Souza', '987.654.321-00', 'mariana@empresa.com', 'B', 'Rio de Janeiro', 'RJ');
 
 -- Fornecedores
 INSERT INTO \`fornecedores\` (\`id\`, \`razao_social\`, \`marca\`, \`tipo_pessoa\`, \`cnpj\`, \`cidade\`, \`estado\`, \`ativo\`) VALUES
@@ -44,17 +49,18 @@ INSERT INTO \`usuarios\` (\`id\`, \`nome\`, \`senha_hash\`, \`ativo\`) VALUES
 -- ==========================================
 
 -- Clientes
-INSERT INTO \`clientes\` (\`id\`, \`nome\`, \`cpf_cnpj\`, \`rota_id\`, \`cidade\`, \`estado\`, \`limite_credito\`, \`ativo\`) VALUES
-(1, 'Loja da Esquina', '11.111.111/0001-11', 1, 'São Paulo', 'SP', 5000.00, 1),
-(2, 'Boutique Chique', '22.222.222/0001-22', 2, 'Rio de Janeiro', 'RJ', 12000.00, 1),
-(3, 'Mercadão Popular', '33.333.333/0001-33', 3, 'São Paulo', 'SP', 8000.00, 1);
+-- Note: praça string removed from schema? No, I kept it as praca_id. Schema has praca_id and tabela_preco.
+INSERT INTO \`clientes\` (\`id\`, \`nome\`, \`cpf_cnpj\`, \`rota_id\`, \`vendedor_id\`, \`praca_id\`, \`tabela_preco\`, \`cidade\`, \`estado\`, \`limite_credito\`, \`ativo\`) VALUES
+(1, 'Loja da Esquina', '11.111.111/0001-11', 1, 1, 1, 'A', 'São Paulo', 'SP', 5000.00, 1),
+(2, 'Boutique Chique', '22.222.222/0001-22', 2, 2, 2, 'B', 'Rio de Janeiro', 'RJ', 12000.00, 1),
+(3, 'Mercadão Popular', '33.333.333/0001-33', 3, 1, 1, 'A', 'São Paulo', 'SP', 8000.00, 1);
 
 -- Produtos
-INSERT INTO \`produtos\` (\`id\`, \`codigo\`, \`descricao\`, \`grupo_id\`, \`preco_custo\`, \`preco_venda\`, \`preco_minimo\`) VALUES
-(1, 'P001', 'Camiseta Básica Algodão', 1, 15.00, 35.00, 30.00),
-(2, 'P002', 'Calça Jeans Skinny', 1, 40.00, 120.00, 100.00),
-(3, 'P003', 'Tênis Esportivo', 2, 80.00, 250.00, 220.00),
-(4, 'P004', 'Boné Aba Reta', 3, 10.00, 45.00, 40.00);
+INSERT INTO \`produtos\` (\`id\`, \`codigo\`, \`descricao\`, \`grupo_id\`, \`preco_custo\`, \`preco_venda_a\`, \`preco_venda_b\`, \`preco_minimo\`) VALUES
+(1, 'P001', 'Camiseta Básica Algodão', 1, 15.00, 35.00, 40.00, 30.00),
+(2, 'P002', 'Calça Jeans Skinny', 1, 40.00, 120.00, 130.00, 100.00),
+(3, 'P003', 'Tênis Esportivo', 2, 80.00, 250.00, 270.00, 220.00),
+(4, 'P004', 'Boné Aba Reta', 3, 10.00, 45.00, 50.00, 40.00);
 
 -- ==========================================
 -- 3. SUB-ENTITIES

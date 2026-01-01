@@ -1,13 +1,20 @@
 export type TipoPessoa = "F" | "J";
-export type SituacaoPedido = "pendente" | "faturado" | "cancelado" | "perdido";
+export type SituacaoPedido = "emitido" | "devolvido" | "retornado" | "vendido" | "cancelado";
 export type TipoMovimentacao = "devolucao" | "defeito" | "ajuste";
 
 // Helper for optional fields (nullable in DB)
 export type Nullable<T> = T | null;
 
+export interface Praca {
+    id: number;
+    codigo: string;
+    nome: string;
+}
+
 export interface Rota {
     id: number;
     codigo: string;
+    praca_id: number; // FK -> Praca
     bairro: Nullable<string>;
     nome: Nullable<string>;
 }
@@ -25,6 +32,7 @@ export interface Vendedor {
     cep: Nullable<string>;
     telefone: Nullable<string>;
     email: Nullable<string>;
+    tabela_preco: "A" | "B";
     pracas_atendimento: Nullable<string[] | any>; // JSON column
     data_cadastro: Date;
 }
@@ -77,7 +85,9 @@ export interface Cliente {
     nome_pai: Nullable<string>;
     naturalidade: Nullable<string>;
     rota_id: Nullable<number>; // FK -> Rota
-    praça: Nullable<string>;
+    vendedor_id: number; // FK -> Vendedor (obrigatório)
+    praca_id: Nullable<number>; // FK -> Praca
+    tabela_preco: "A" | "B";
     referencia: Nullable<string>;
     ativo: boolean;
     data_cadastro: Date;
@@ -94,8 +104,8 @@ export interface Produto {
     grupo_id: number; // FK -> ProdutoGrupo
     preco_compra: Nullable<number>;
     preco_custo: Nullable<number>;
-    preco_venda: Nullable<number>;
-    preco_venda_b: Nullable<number>;
+    preco_venda_a: Nullable<number>; // Renamed from preco_venda
+    preco_venda_b: Nullable<number>; // New
     tabela_preco: Nullable<string>;
     preco_minimo: Nullable<number>;
     data_atualizacao: Date;
