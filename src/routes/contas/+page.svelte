@@ -1,12 +1,10 @@
 <script lang="ts">
-    import { Button } from "$lib/components/ui/button/index";
-    import * as Card from "$lib/components/ui/card/index.js";
-    import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import { Input } from "$lib/components/ui/input/index";
-    import * as Table from "$lib/components/ui/table/index.js";
-    import type { Cliente, ContaFinanceira, Vendedor } from "$lib/types";
-    import { Label } from "@/components/ui/label/index";
-    import db, { queryHelper } from "@/db/db.svelte";
+    import { Button } from "@/components/ui/button/index";
+    import * as Card from "@/components/ui/card/index.js";
+    import { Input } from "@/components/ui/input/index";
+    import * as Table from "@/components/ui/table/index.js";
+    import type { ContaFinanceira } from "@/types";
+    import db from "@/db/db.svelte";
     import PencilLine from "@lucide/svelte/icons/pencil-line";
     import Plus from "@lucide/svelte/icons/plus";
     import Search from "@lucide/svelte/icons/search";
@@ -16,81 +14,36 @@
     import Wallet from "@lucide/svelte/icons/wallet";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
+    import { goto } from "$app/navigation";
+    import Id from "@/id.svelte";
+    import PaginationControl from "@/components/PaginationControl.svelte";
 
     let contas = $state<Array<ContaFinanceira>>([]);
-    let vendedores = $state<Array<Vendedor>>([]);
-    let clientes = $state<Array<Cliente>>([]);
-    let dialog = $state<string | null>(null);
     let searchQuery = $state("");
+    let page = $state(1);
+    let perPage = 10;
+    let totalItems = $state(0);
 
-    let filteredContas = $derived(
-        contas.filter(
-            (c) =>
-                c.numero_documento
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
-                c.tipo_documento
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()),
-        ),
-    );
+    // Summary statistics
+    let totalPendente = $state(0);
+    let totalLiquidado = $state(0);
 
-    // QOL: Summary statistics
-    let totalPendente = $derived(
-        contas
-            .filter((c) => c.situacao?.toLowerCase() !== "pago")
-            .reduce((acc, c) => acc + parseFloat(`${c.valor}`), 0),
-    );
+    let debounceTimer: ReturnType<typeof setTimeout>;
 
-    let totalPago = $derived(
-        contas
-            .filter((c) => c.situacao?.toLowerCase() === "pago")
-            .reduce((acc, c) => acc + parseFloat(`${c.valor}`), 0),
-    );
-
-    let contaData = $state<Partial<ContaFinanceira>>({
-        data_emissao: new Date().toISOString().split("T")[0] as any,
-        tipo_documento: "",
-        numero_documento: "",
-        valor: 0,
-        data_vencimento: new Date().toISOString().split("T")[0] as any,
-        situacao: "Pendente",
-    });
-
-    async function save() {
-        try {
-            const dataToSave = { ...contaData };
-            delete (dataToSave as any).data_cadastro;
-
-            let q = queryHelper(dataToSave);
-            let query = "";
-
-            if (dataToSave.id) {
-                query = `UPDATE contas_financeiras SET ${q.setClauses} WHERE id = ${dataToSave.id}`;
-            } else {
-                query = `INSERT INTO contas_financeiras (${q.columns}) VALUES (${q.placeholders})`;
-            }
-
-            await db.execute(query, q.values);
-
-            await load();
-            dialog = null;
-            toast.success(
-                `Conta ${dataToSave.id ? "atualizada" : "criada"} com sucesso!`,
-            );
-        } catch (e: unknown) {
-            let message = "Erro desconhecido";
-            if (e instanceof Error) {
-                message = e.message;
-            }
-            toast.error(`Falha ao salvar conta: ${message}`);
-            console.error("Erro ao salvar conta:", e);
-        }
+    function handleSearch() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            page = 1;
+            load();
+        }, 300);
     }
 
+    $effect(() => {
+        if (page) load();
+    });
+
     async function delete_(id: number) {
-        if (!confirm("Tem certeza que deseja excluir esta conta financeira?"))
-            return;
+        if (!confirm("Tem certeza que deseja excluir esta conta?")) return;
         try {
             await db.execute("DELETE FROM contas_financeiras WHERE id = $1", [
                 id,
@@ -109,18 +62,70 @@
 
     async function load() {
         try {
+            const offset = (page - 1) * perPage;
+            let countQuery = "SELECT COUNT(*) as count FROM contas_financeiras";
+            let selectQuery = "SELECT * FROM contas_financeiras";
+            let params: any[] = [];
+            let whereClauses: string[] = [];
+
+            if (searchQuery) {
+                const search = `%${searchQuery}%`;
+                whereClauses.push("descricao LIKE $1 OR categoria LIKE $1");
+                params.push(search);
+            }
+
+            if (whereClauses.length > 0) {
+                const whereClause = " WHERE " + whereClauses.join(" AND ");
+                countQuery += whereClause;
+                selectQuery += whereClause;
+            }
+
+            selectQuery += ` ORDER BY data_vencimento DESC LIMIT ${perPage} OFFSET ${offset}`;
+
+            const countResult = (await db.select(countQuery, params)) as [
+                { count: number },
+            ];
+            totalItems = countResult[0].count;
+
             contas = (await db.select(
-                "SELECT * FROM contas_financeiras",
-                [],
+                selectQuery,
+                params,
             )) as Array<ContaFinanceira>;
-            vendedores = (await db.select(
-                "SELECT * FROM vendedores",
-                [],
-            )) as Array<Vendedor>;
-            clientes = (await db.select(
-                "SELECT * FROM clientes",
-                [],
-            )) as Array<Cliente>;
+
+            // Calculate totals (need separate queries to aggregate over all data, not just paginated)
+            // Ideally this should respect filters too, but for simplicity let's respect filters if applied.
+            // Using SUM() in SQL is much more efficient.
+
+            let pendenteQuery = `
+                SELECT SUM(CASE WHEN tipo = 'receita' THEN valor_original - IFNULL(valor_pago, 0) ELSE -(valor_original - IFNULL(valor_pago, 0)) END) as total
+                FROM contas_financeiras
+                WHERE situacao NOT IN ('pago', 'cancelado')
+            `;
+            let liquidadoQuery = `
+                SELECT SUM(CASE WHEN tipo = 'receita' THEN IFNULL(valor_pago, 0) ELSE -IFNULL(valor_pago, 0) END) as total
+                FROM contas_financeiras
+            `;
+
+            if (whereClauses.length > 0) {
+                const whereClause = " AND (" + whereClauses.join(" AND ") + ")";
+                pendenteQuery += whereClause;
+                // For liquidado, it typically considers everything, but if we filter by search query, maybe we should filter totals too?
+                // The original code filtered 'contas' array which was filtered by search query.
+                // So yes, let's append filter to liquidadoQuery too.
+                // Note: liquidadoQuery doesn't have a WHERE clause yet, so start with WHERE
+                liquidadoQuery += " WHERE " + whereClauses.join(" AND ");
+            }
+
+            const pendenteResult = (await db.select(pendenteQuery, params)) as [
+                { total: number },
+            ];
+            totalPendente = pendenteResult[0]?.total || 0;
+
+            const liquidadoResult = (await db.select(
+                liquidadoQuery,
+                params,
+            )) as [{ total: number }];
+            totalLiquidado = liquidadoResult[0]?.total || 0;
         } catch (e: unknown) {
             let message = "Erro desconhecido";
             if (e instanceof Error) {
@@ -134,22 +139,10 @@
     onMount(() => load());
 
     function formatCurrency(value: number) {
-        console.log(value);
         return value.toLocaleString("pt-BR", {
             style: "currency",
             currency: "BRL",
         });
-    }
-
-    function resetContaData() {
-        contaData = {
-            data_emissao: new Date().toISOString().split("T")[0] as any,
-            tipo_documento: "",
-            numero_documento: "",
-            valor: 0,
-            data_vencimento: new Date().toISOString().split("T")[0] as any,
-            situacao: "Pendente",
-        };
     }
 </script>
 
@@ -159,9 +152,11 @@
             <Card.Header class="pb-2">
                 <Card.Description class="flex items-center gap-2">
                     <TrendingDown class="h-4 w-4 text-primary" />
-                    Balanço Pendente
+                    Saldo Pendente (Estimado)
                 </Card.Description>
-                <Card.Title class="text-3xl font-bold text-red-600">
+                <Card.Title
+                    class={`text-3xl font-bold ${totalPendente >= 0 ? "text-green-600" : "text-red-600"}`}
+                >
                     {formatCurrency(totalPendente)}
                 </Card.Title>
             </Card.Header>
@@ -170,10 +165,12 @@
             <Card.Header class="pb-2">
                 <Card.Description class="flex items-center gap-2">
                     <TrendingUp class="h-4 w-4 text-green-600" />
-                    Total Liquidado
+                    Total Liquidado (Balanço)
                 </Card.Description>
-                <Card.Title class="text-3xl font-bold text-green-600">
-                    {formatCurrency(totalPago)}
+                <Card.Title
+                    class={`text-3xl font-bold ${totalLiquidado >= 0 ? "text-green-600" : "text-red-600"}`}
+                >
+                    {formatCurrency(totalLiquidado)}
                 </Card.Title>
             </Card.Header>
         </Card.Root>
@@ -187,7 +184,7 @@
                     Contas Financeiras
                 </Card.Title>
                 <Card.Description>
-                    Gerencie suas contas a pagar e a receber.
+                    Gerencie suas receitas e despesas.
                 </Card.Description>
             </div>
             <Button
@@ -195,8 +192,7 @@
                 variant="outline"
                 size="lg"
                 onclick={() => {
-                    resetContaData();
-                    dialog = "new";
+                    goto("/contas/novo");
                 }}
             >
                 Nova conta
@@ -211,9 +207,10 @@
                     />
                     <Input
                         type="search"
-                        placeholder="Pesquisar por documento..."
+                        placeholder="Pesquisar por descrição..."
                         class="pl-8"
                         bind:value={searchQuery}
+                        oninput={handleSearch}
                     />
                 </div>
             </div>
@@ -221,32 +218,40 @@
             <Table.Root>
                 <Table.Header>
                     <Table.Row>
-                        <Table.Head>Emissão</Table.Head>
-                        <Table.Head>Nº Doc.</Table.Head>
-                        <Table.Head>Valor</Table.Head>
+                        <Table.Head>Descrição</Table.Head>
+                        <Table.Head>Tipo</Table.Head>
+                        <Table.Head>Valor Original</Table.Head>
+                        <Table.Head>Valor Pago</Table.Head>
                         <Table.Head>Vencimento</Table.Head>
                         <Table.Head>Situação</Table.Head>
                         <Table.Head class="w-12.5"></Table.Head>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                    {#each filteredContas as conta (conta.id)}
+                    {#each contas as conta (conta.id)}
                         <Table.Row>
-                            <Table.Cell>
-                                {new Date(
-                                    conta.data_emissao,
-                                ).toLocaleDateString("pt-BR")}
-                            </Table.Cell>
                             <Table.Cell class="font-medium text-primary">
-                                {conta.numero_documento}
+                                {conta.descricao}
+                                {#if conta.categoria}
+                                    <span
+                                        class="block text-xs text-muted-foreground"
+                                    >
+                                        {conta.categoria}
+                                    </span>
+                                {/if}
+                            </Table.Cell>
+                            <Table.Cell>
                                 <span
-                                    class="block text-xs text-muted-foreground"
+                                    class={`capitalize ${conta.tipo === "receita" ? "text-green-600" : "text-red-600"}`}
                                 >
-                                    {conta.tipo_documento}
+                                    {conta.tipo}
                                 </span>
                             </Table.Cell>
                             <Table.Cell class="font-bold">
-                                {formatCurrency(conta.valor)}
+                                {formatCurrency(conta.valor_original)}
+                            </Table.Cell>
+                            <Table.Cell>
+                                {formatCurrency(conta.valor_pago || 0)}
                             </Table.Cell>
                             <Table.Cell>
                                 {new Date(
@@ -256,9 +261,11 @@
                             <Table.Cell>
                                 <span
                                     class={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                                        conta.situacao?.toLowerCase() === "pago"
+                                        conta.situacao === "pago"
                                             ? "bg-green-100 text-green-800"
-                                            : "bg-yellow-100 text-yellow-800"
+                                            : conta.situacao === "atrasado"
+                                              ? "bg-red-100 text-red-800"
+                                              : "bg-yellow-100 text-yellow-800"
                                     }`}
                                 >
                                     {conta.situacao}
@@ -269,8 +276,8 @@
                                     variant="ghost"
                                     size="icon-lg"
                                     onclick={() => {
-                                        contaData = { ...conta };
-                                        dialog = "edit";
+                                        Id.id = conta.id;
+                                        goto(`/contas/id/edit`);
                                     }}
                                 >
                                     <PencilLine
@@ -292,7 +299,7 @@
                     {:else}
                         <Table.Row>
                             <Table.Cell
-                                colspan={6}
+                                colspan={7}
                                 class="text-center py-10 text-muted-foreground"
                             >
                                 Nenhuma conta encontrada.
@@ -301,118 +308,10 @@
                     {/each}
                 </Table.Body>
             </Table.Root>
+
+            <div class="mt-4">
+                <PaginationControl count={totalItems} {perPage} bind:page />
+            </div>
         </Card.Content>
     </Card.Root>
 </div>
-
-<Dialog.Root
-    open={dialog != null}
-    onOpenChange={(e) => {
-        if (!e) {
-            dialog = null;
-        }
-    }}
->
-    <Dialog.Content class="sm:max-w-150">
-        <Dialog.Header>
-            <Dialog.Title>
-                {dialog === "new" ? "Nova Conta" : "Editar Conta"}
-            </Dialog.Title>
-            <Dialog.Description>
-                Preencha os detalhes financeiros abaixo.
-            </Dialog.Description>
-        </Dialog.Header>
-
-        <div class="grid gap-4 py-4">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="grid gap-2">
-                    <Label for="tipo">Tipo de Documento</Label>
-                    <Input
-                        id="tipo"
-                        bind:value={contaData.tipo_documento}
-                        placeholder="Ex: NF, Boleto"
-                    />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="numero">Nº Documento</Label>
-                    <Input
-                        id="numero"
-                        bind:value={contaData.numero_documento}
-                        placeholder="000.000"
-                    />
-                </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-4">
-                <div class="grid gap-2">
-                    <Label for="emissao">Emissão</Label>
-                    <Input
-                        id="emissao"
-                        type="date"
-                        bind:value={contaData.data_emissao}
-                    />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="vencimento">Vencimento</Label>
-                    <Input
-                        id="vencimento"
-                        type="date"
-                        bind:value={contaData.data_vencimento}
-                    />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="valor">Valor</Label>
-                    <Input
-                        id="valor"
-                        type="number"
-                        step="0.01"
-                        bind:value={contaData.valor}
-                    />
-                </div>
-            </div>
-
-            <div class="grid gap-2">
-                <Label for="cliente">Cliente (Opcional)</Label>
-                <select
-                    id="cliente"
-                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    bind:value={contaData.cliente_id}
-                >
-                    <option value={0}>Selecione um cliente</option>
-                    {#each clientes as cliente}
-                        <option value={cliente.id}>{cliente.nome}</option>
-                    {/each}
-                </select>
-            </div>
-
-            <div class="grid gap-2">
-                <Label for="situacao">Situação</Label>
-                <select
-                    id="situacao"
-                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    bind:value={contaData.situacao}
-                >
-                    <option value="Pendente">Pendente</option>
-                    <option value="Pago">Pago</option>
-                    <option value="Atrasado">Atrasado</option>
-                </select>
-            </div>
-
-            <div class="grid gap-2">
-                <Label for="obs">Observações</Label>
-                <Input
-                    id="obs"
-                    bind:value={contaData.observacoes}
-                    placeholder="Notas adicionais..."
-                />
-            </div>
-        </div>
-
-        <Dialog.Footer>
-            <Button variant="outline" onclick={() => (dialog = null)}>
-                Cancelar
-            </Button>
-            <Button onclick={save}>Salvar</Button>
-        </Dialog.Footer>
-    </Dialog.Content>
-</Dialog.Root>

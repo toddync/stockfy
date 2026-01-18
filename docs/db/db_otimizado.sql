@@ -17,9 +17,7 @@ CREATE TABLE `clientes` (
   `nome_pai` VARCHAR(100),
   `naturalidade` VARCHAR(50),
   `rota_id` INT,
-  `vendedor_id` INT NOT NULL,
-  `praca_id` INT,
-  `tabela_preco` ENUM('A', 'B') DEFAULT 'A',
+  `praça` VARCHAR(50),
   `referencia` VARCHAR(255),
   `ativo` BOOLEAN DEFAULT TRUE,
   `data_cadastro` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -27,9 +25,7 @@ CREATE TABLE `clientes` (
   `hora_visita_fim` TIME,
   `dias_visita` VARCHAR(20),
   `observacoes` TEXT,
-  FOREIGN KEY (`rota_id`) REFERENCES `rotas`(`id`),
-  FOREIGN KEY (`vendedor_id`) REFERENCES `vendedores`(`id`),
-  FOREIGN KEY (`praca_id`) REFERENCES `pracas`(`id`)
+  FOREIGN KEY (`rota_id`) REFERENCES `rotas`(`id`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `vendedores` (
@@ -45,7 +41,6 @@ CREATE TABLE `vendedores` (
   `cep` VARCHAR(9),
   `telefone` VARCHAR(50),
   `email` VARCHAR(100),
-  `tabela_preco` ENUM('A', 'B') DEFAULT 'A',
   `pracas_atendimento` JSON,
   `data_cadastro` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -62,8 +57,7 @@ CREATE TABLE `produtos` (
   `descricao` VARCHAR(150) NOT NULL,
   `grupo_id` INT NOT NULL,
   `preco_custo` DECIMAL(12, 2),
-  `preco_venda_a` DECIMAL(12, 2),
-  `preco_venda_b` DECIMAL(12, 2) DEFAULT 0,
+  `preco_venda` DECIMAL(12, 2),
   `estoque_atual` DECIMAL(10, 2) DEFAULT 0,
   `tabela_preco` VARCHAR(10),
   `preco_minimo` DECIMAL(12, 2),
@@ -104,7 +98,7 @@ CREATE TABLE `pedidos` (
   `valor_venda` DECIMAL(12, 2),
   `valor_pago` DECIMAL(12, 2),
   `residuo` DECIMAL(12, 2),
-  `situacao` ENUM('emitido', 'devolvido', 'retornado', 'vendido', 'cancelado') NOT NULL,
+  `situacao` ENUM('pendente', 'faturado', 'cancelado', 'perdido') NOT NULL,
   `solicitacao_numero` VARCHAR(20),
   `retorno` VARCHAR(20),
   `cobranca` VARCHAR(20),
@@ -123,7 +117,7 @@ CREATE TABLE `pedido_itens` (
   `quantidade_saida` INT NOT NULL DEFAULT 0,
   `quantidade_retorno` INT NOT NULL DEFAULT 0,
   `preco_custo` DECIMAL(12, 2),
-  `preco_venda` DECIMAL(12, 2) NOT NULL, -- Preço efetivamente praticado (A ou B)
+  `preco_venda` DECIMAL(12, 2) NOT NULL,
   FOREIGN KEY (`pedido_id`) REFERENCES `pedidos`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`produto_id`) REFERENCES `produtos`(`id`)
 ) ENGINE=InnoDB;
@@ -187,19 +181,11 @@ CREATE TABLE `movimentacao_itens` (
 ) ENGINE=InnoDB;
 
 -- Tabelas auxiliares
-CREATE TABLE `pracas` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `codigo` VARCHAR(10) UNIQUE NOT NULL,
-  `nome` VARCHAR(100) NOT NULL
-) ENGINE=InnoDB;
-
 CREATE TABLE `rotas` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `codigo` VARCHAR(10) UNIQUE NOT NULL,
-  `praca_id` INT NOT NULL,
   `bairro` VARCHAR(100),
-  `nome` VARCHAR(100),
-  FOREIGN KEY (`praca_id`) REFERENCES `pracas`(`id`)
+  `nome` VARCHAR(100)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `solicitacoes` (

@@ -1,68 +1,77 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
+    import { Button } from "@/components/ui/button/index";
+    import * as Card from "@/components/ui/card/index.js";
+    import { Input } from "@/components/ui/input/index";
+    import * as Table from "@/components/ui/table/index.js";
+    import db from "@/db/db.svelte";
+    import Id from "@/id.svelte";
     import MapPin from "@lucide/svelte/icons/map-pin";
-    import * as Card from "$lib/components/ui/card/index.js";
-    import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import * as Table from "$lib/components/ui/table/index.js";
-    import { Button } from "$lib/components/ui/button/index";
-    import { Input } from "$lib/components/ui/input/index";
-    import { Label } from "@/components/ui/label/index";
-    import db, { queryHelper } from "@/db/db.svelte";
-    import Plus from "@lucide/svelte/icons/plus";
     import PencilLine from "@lucide/svelte/icons/pencil-line";
-    import Trash2 from "@lucide/svelte/icons/trash-2";
+    import Plus from "@lucide/svelte/icons/plus";
     import Search from "@lucide/svelte/icons/search";
+    import Trash2 from "@lucide/svelte/icons/trash-2";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
+    import PaginationControl from "@/components/PaginationControl.svelte";
 
     interface Praca {
-        id?: number;
+        id: number;
         codigo: string;
         nome: string;
     }
 
     let pracas = $state<Array<Praca>>([]);
-    let dialog = $state<string | null>(null);
     let searchQuery = $state("");
+    let page = $state(1);
+    let perPage = 10;
+    let totalItems = $state(0);
 
-    let filteredPracas = $derived(
-        pracas.filter(
-            (p) =>
-                p.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                p.codigo.toLowerCase().includes(searchQuery.toLowerCase()),
-        ),
-    );
+    let debounceTimer: ReturnType<typeof setTimeout>;
 
-    let pracaData = $state<Partial<Praca>>({
-        codigo: "",
-        nome: "",
+    function handleSearch() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            page = 1;
+            load();
+        }, 300);
+    }
+
+    $effect(() => {
+        if (page) load();
     });
 
-    async function save() {
+    async function load() {
         try {
-            let q = queryHelper(pracaData);
-            let query = "";
+            const offset = (page - 1) * perPage;
+            let countQuery = "SELECT COUNT(*) as count FROM pracas";
+            let selectQuery = "SELECT * FROM pracas";
+            let params: any[] = [];
 
-            if (pracaData.id) {
-                query = `UPDATE pracas SET ${q.setClauses} WHERE id = ${pracaData.id}`;
-            } else {
-                query = `INSERT INTO pracas (${q.columns}) VALUES (${q.placeholders})`;
+            if (searchQuery) {
+                const search = `%${searchQuery}%`;
+                const whereClause = " WHERE nome LIKE $1 OR codigo LIKE $1";
+                countQuery += whereClause;
+                selectQuery += whereClause;
+                params.push(search);
             }
 
-            await db.execute(query, q.values);
+            selectQuery += ` ORDER BY nome ASC LIMIT ${perPage} OFFSET ${offset}`;
 
-            await load();
-            dialog = null;
-            toast.success(
-                `Praça ${pracaData.id ? "atualizada" : "criada"} com sucesso!`,
-            );
+            const countResult = (await db.select(countQuery, params)) as [
+                { count: number },
+            ];
+            totalItems = countResult[0].count;
+
+            pracas = (await db.select(selectQuery, params)) as Array<Praca>;
         } catch (e: any) {
-            toast.error(e.message || "Erro ao salvar praça");
             console.error(e);
+            toast.error("Erro ao carregar praças do banco de dados.");
         }
     }
 
     async function delete_(id: number) {
-        if (!confirm("Confirmar exclusão?")) return;
+        if (!confirm("Tem certeza que deseja excluir esta praça?")) return;
         try {
             await db.execute("DELETE FROM pracas WHERE id = $1", [id]);
             await load();
@@ -73,30 +82,11 @@
         }
     }
 
-    async function load() {
-        try {
-            pracas = (await db.select(
-                "SELECT * FROM pracas",
-                [],
-            )) as Array<Praca>;
-        } catch (e: any) {
-            console.error(e);
-            toast.error("Erro ao carregar praças do banco de dados.");
-        }
-    }
-
     onMount(() => load());
-
-    function resetData() {
-        pracaData = {
-            codigo: "",
-            nome: "",
-        };
-    }
 </script>
 
 <Card.Root class="m-10">
-    <Card.Header class="flex flex-row items-center">
+    <Card.Header class="flex flex-row items-center w-full">
         <div>
             <Card.Title class="text-3xl flex items-center gap-2">
                 <MapPin class="h-8 w-8 text-primary" />
@@ -107,16 +97,15 @@
             </Card.Description>
         </div>
         <Button
-            class="ml-auto cursor-pointer"
+            class="ml-auto cursor-pointer gap-2"
             variant="outline"
             size="lg"
             onclick={() => {
-                resetData();
-                dialog = "new";
+                goto("/pracas/novo");
             }}
         >
-            Nova praça
-            <Plus class="ml-2 h-4 w-4" />
+            <Plus class="h-4 w-4" />
+            Nova Praça
         </Button>
     </Card.Header>
     <Card.Content>
@@ -130,6 +119,7 @@
                     placeholder="Pesquisar por nome ou código..."
                     class="pl-8"
                     bind:value={searchQuery}
+                    oninput={handleSearch}
                 />
             </div>
         </div>
@@ -139,36 +129,39 @@
                 <Table.Row>
                     <Table.Head>Código</Table.Head>
                     <Table.Head>Nome</Table.Head>
-                    <Table.Head class="w-12.5"></Table.Head>
+                    <Table.Head class="w-24 text-right">Ações</Table.Head>
                 </Table.Row>
             </Table.Header>
             <Table.Body>
-                {#each filteredPracas as p (p.id)}
-                    <Table.Row>
-                        <Table.Cell class="font-bold">{p.codigo}</Table.Cell>
-                        <Table.Cell class="font-medium text-primary">
+                {#each pracas as p (p.id)}
+                    <Table.Row class="hover:bg-muted/50 transition-colors">
+                        <Table.Cell
+                            class="font-mono font-bold text-muted-foreground"
+                            >{p.codigo}</Table.Cell
+                        >
+                        <Table.Cell class="font-bold text-primary">
                             {p.nome}
                         </Table.Cell>
-                        <Table.Cell class="flex justify-end gap-2">
+                        <Table.Cell class="text-right whitespace-nowrap">
                             <Button
                                 variant="ghost"
-                                size="icon-lg"
+                                size="icon"
                                 onclick={() => {
-                                    pracaData = p;
-                                    dialog = "edit";
+                                    Id.id = p.id;
+                                    goto(`/pracas/id/edit`);
                                 }}
                             >
                                 <PencilLine
-                                    class="h-4 w-4 stroke-3 stroke-lime-400"
+                                    class="h-4 w-4 stroke-3 text-lime-600"
                                 />
                             </Button>
                             <Button
                                 variant="ghost"
-                                size="icon-lg"
-                                onclick={() => delete_(p.id!)}
+                                size="icon"
+                                onclick={() => delete_(p.id)}
                             >
                                 <Trash2
-                                    class="h-4 w-4 stroke-3 stroke-red-500"
+                                    class="h-4 w-4 stroke-3  text-red-500"
                                 />
                             </Button>
                         </Table.Cell>
@@ -177,7 +170,7 @@
                     <Table.Row>
                         <Table.Cell
                             colspan={3}
-                            class="text-center py-10 text-muted-foreground"
+                            class="text-center py-12 text-muted-foreground italic"
                         >
                             Nenhuma praça encontrada.
                         </Table.Cell>
@@ -185,44 +178,9 @@
                 {/each}
             </Table.Body>
         </Table.Root>
+
+        <div class="mt-4">
+            <PaginationControl count={totalItems} {perPage} bind:page />
+        </div>
     </Card.Content>
 </Card.Root>
-
-<Dialog.Root open={dialog != null} onOpenChange={(e) => !e && (dialog = null)}>
-    <Dialog.Content class="sm:max-w-106.25">
-        <Dialog.Header>
-            <Dialog.Title
-                >{dialog === "new"
-                    ? "Nova Praça"
-                    : "Editar Praça"}</Dialog.Title
-            >
-            <Dialog.Description
-                >Defina os dados da região de atendimento.</Dialog.Description
-            >
-        </Dialog.Header>
-        <div class="grid gap-4 py-4">
-            <div class="grid gap-2">
-                <Label for="codigo">Código</Label>
-                <Input
-                    id="codigo"
-                    bind:value={pracaData.codigo}
-                    placeholder="Ex: RJ-01"
-                />
-            </div>
-            <div class="grid gap-2">
-                <Label for="nome">Nome</Label>
-                <Input
-                    id="nome"
-                    bind:value={pracaData.nome}
-                    placeholder="Ex: Rio de Janeiro - Centro"
-                />
-            </div>
-        </div>
-        <Dialog.Footer>
-            <Button variant="outline" onclick={() => (dialog = null)}>
-                Cancelar
-            </Button>
-            <Button onclick={save}>Salvar</Button>
-        </Dialog.Footer>
-    </Dialog.Content>
-</Dialog.Root>

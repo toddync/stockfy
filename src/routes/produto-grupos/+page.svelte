@@ -1,73 +1,43 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
+    import { Button } from "@/components/ui/button/index";
+    import * as Card from "@/components/ui/card/index.js";
+    import { Input } from "@/components/ui/input/index";
+    import * as Table from "@/components/ui/table/index.js";
+    import type { ProdutoGrupo } from "@/types";
+    import db from "@/db/db.svelte";
+    import Id from "@/id.svelte";
     import Boxes from "@lucide/svelte/icons/boxes";
-    import * as Card from "$lib/components/ui/card/index.js";
-    import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-    import * as Table from "$lib/components/ui/table/index.js";
-    import { Button } from "$lib/components/ui/button/index";
-    import { Input } from "$lib/components/ui/input/index";
-    import { Label } from "@/components/ui/label/index";
-    import db, { queryHelper } from "@/db/db.svelte";
-    import type { ProdutoGrupo } from "$lib/types";
-    import Ellipsis from "@lucide/svelte/icons/ellipsis";
     import PencilLine from "@lucide/svelte/icons/pencil-line";
     import Plus from "@lucide/svelte/icons/plus";
-    import Trash2 from "@lucide/svelte/icons/trash-2";
     import Search from "@lucide/svelte/icons/search";
+    import Trash2 from "@lucide/svelte/icons/trash-2";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
+    import PaginationControl from "@/components/PaginationControl.svelte";
 
     let grupos = $state<Array<ProdutoGrupo>>([]);
-    let dialog = $state<string | null>(null);
     let searchQuery = $state("");
+    let page = $state(1);
+    let perPage = 10;
+    let totalItems = $state(0);
 
-    let filteredGrupos = $derived(
-        grupos.filter(
-            (g) =>
-                g.descricao.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                g.codigo.toLowerCase().includes(searchQuery.toLowerCase()),
-        ),
-    );
+    let debounceTimer: ReturnType<typeof setTimeout>;
 
-    let grupoData = $state<Partial<ProdutoGrupo>>({
-        codigo: "",
-        descricao: "",
-    });
-
-    async function save() {
-        try {
-            const dataToSave = { ...grupoData };
-            delete (dataToSave as any).data_cadastro;
-
-            let q = queryHelper(dataToSave);
-            let query = "";
-
-            if (dataToSave.id) {
-                query = `UPDATE produto_grupos SET ${q.setClauses} WHERE id = ${dataToSave.id}`;
-            } else {
-                query = `INSERT INTO produto_grupos (${q.columns}) VALUES (${q.placeholders})`;
-            }
-
-            await db.execute(query, q.values);
-
-            await load();
-            dialog = null;
-            toast.success(
-                `Grupo ${dataToSave.id ? "atualizado" : "criado"} com sucesso!`,
-            );
-        } catch (e: unknown) {
-            let message = "Erro desconhecido";
-            if (e instanceof Error) {
-                message = e.message;
-            }
-            toast.error(`Falha ao salvar grupo: ${message}`);
-            console.error("Erro ao salvar grupo:", e);
-        }
+    function handleSearch() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            page = 1;
+            load();
+        }, 300);
     }
 
+    $effect(() => {
+        if (page) load();
+    });
+
     async function delete_(id: number) {
-        if (!confirm("Tem certeza que deseja excluir este grupo de produtos?"))
-            return;
+        if (!confirm("Tem certeza que deseja excluir este grupo?")) return;
         try {
             await db.execute("DELETE FROM produto_grupos WHERE id = $1", [id]);
             await load();
@@ -84,9 +54,30 @@
 
     async function load() {
         try {
+            const offset = (page - 1) * perPage;
+            let countQuery = "SELECT COUNT(*) as count FROM produto_grupos";
+            let selectQuery = "SELECT * FROM produto_grupos";
+            let params: any[] = [];
+
+            if (searchQuery) {
+                const search = `%${searchQuery}%`;
+                const whereClause =
+                    " WHERE descricao LIKE $1 OR codigo LIKE $1";
+                countQuery += whereClause;
+                selectQuery += whereClause;
+                params.push(search);
+            }
+
+            selectQuery += ` ORDER BY descricao ASC LIMIT ${perPage} OFFSET ${offset}`;
+
+            const countResult = (await db.select(countQuery, params)) as [
+                { count: number },
+            ];
+            totalItems = countResult[0].count;
+
             grupos = (await db.select(
-                "SELECT * FROM produto_grupos",
-                [],
+                selectQuery,
+                params,
             )) as Array<ProdutoGrupo>;
         } catch (e: unknown) {
             let message = "Erro desconhecido";
@@ -99,17 +90,10 @@
     }
 
     onMount(() => load());
-
-    function resetGrupoData() {
-        grupoData = {
-            codigo: "",
-            descricao: "",
-        };
-    }
 </script>
 
 <Card.Root class="m-10">
-    <Card.Header class="flex flex-row items-center">
+    <Card.Header class="flex flex-row items-center w-full">
         <div>
             <Card.Title class="text-3xl flex items-center gap-2">
                 <Boxes class="h-8 w-8 text-primary" />
@@ -120,20 +104,17 @@
             </Card.Description>
         </div>
         <Button
-            class="ml-auto cursor-pointer"
+            class="ml-auto cursor-pointer gap-2"
             variant="outline"
             size="lg"
-            onclick={() => {
-                resetGrupoData();
-                dialog = "new";
-            }}
+            onclick={() => goto("/produto-grupos/novo")}
         >
-            Novo grupo
-            <Plus class="ml-2 h-4 w-4" />
+            <Plus class="h-4 w-4" />
+            Novo Grupo
         </Button>
     </Card.Header>
     <Card.Content>
-        <div class="mb-6 flex items-center gap-4">
+        <div class="mb-6 flex items-center gap-4 h-full">
             <div class="relative flex-1 max-w-sm">
                 <Search
                     class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
@@ -143,6 +124,7 @@
                     placeholder="Pesquisar por código ou descrição..."
                     class="pl-8"
                     bind:value={searchQuery}
+                    oninput={handleSearch}
                 />
             </div>
         </div>
@@ -152,38 +134,39 @@
                 <Table.Row>
                     <Table.Head>Código</Table.Head>
                     <Table.Head>Descrição</Table.Head>
-                    <Table.Head class="w-12.5"></Table.Head>
+                    <Table.Head class="text-right">Ações</Table.Head>
                 </Table.Row>
             </Table.Header>
             <Table.Body>
-                {#each filteredGrupos as grupo (grupo.id)}
-                    <Table.Row>
-                        <Table.Cell class="font-medium">
+                {#each grupos as grupo (grupo.id)}
+                    <Table.Row class="hover:bg-muted/50 transition-colors">
+                        <Table.Cell
+                            class="font-mono font-bold text-muted-foreground"
+                        >
                             {grupo.codigo}
                         </Table.Cell>
-                        <Table.Cell>{grupo.descricao}</Table.Cell>
-                        <Table.Cell>
+                        <Table.Cell class="font-bold text-primary">
+                            {grupo.descricao}
+                        </Table.Cell>
+                        <Table.Cell class="text-right whitespace-nowrap">
                             <Button
                                 variant="ghost"
-                                size="icon-lg"
+                                size="icon"
                                 onclick={() => {
-                                    grupoData = { ...grupo };
-                                    dialog = "edit";
+                                    Id.id = grupo.id;
+                                    goto(`/produto-grupos/id/edit`);
                                 }}
                             >
                                 <PencilLine
-                                    class="h-4 w-4 stroke-3 stroke-lime-400"
+                                    class="h-4 w-4 stroke-3 text-lime-600"
                                 />
                             </Button>
                             <Button
                                 variant="ghost"
-                                size="icon-lg"
-                                class="text-destructive focus:text-destructive"
+                                size="icon"
                                 onclick={() => delete_(grupo.id)}
                             >
-                                <Trash2
-                                    class="h-4 w-4 stroke-3 stroke-red-500"
-                                />
+                                <Trash2 class="h-4 w-4 stroke-3 text-red-500" />
                             </Button>
                         </Table.Cell>
                     </Table.Row>
@@ -191,7 +174,7 @@
                     <Table.Row>
                         <Table.Cell
                             colspan={3}
-                            class="text-center py-10 text-muted-foreground"
+                            class="text-center py-10 text-muted-foreground italic"
                         >
                             Nenhum grupo encontrado.
                         </Table.Cell>
@@ -199,51 +182,9 @@
                 {/each}
             </Table.Body>
         </Table.Root>
+
+        <div class="mt-4">
+            <PaginationControl count={totalItems} {perPage} bind:page />
+        </div>
     </Card.Content>
 </Card.Root>
-
-<Dialog.Root
-    open={dialog != null}
-    onOpenChange={(e) => {
-        if (!e) {
-            dialog = null;
-        }
-    }}
->
-    <Dialog.Content class="sm:max-w-106.25">
-        <Dialog.Header>
-            <Dialog.Title>
-                {dialog === "new" ? "Novo Grupo" : "Editar Grupo"}
-            </Dialog.Title>
-            <Dialog.Description>
-                Preencha as informações do grupo abaixo.
-            </Dialog.Description>
-        </Dialog.Header>
-
-        <div class="grid gap-4 py-4">
-            <div class="grid gap-2">
-                <Label for="codigo">Código</Label>
-                <Input
-                    id="codigo"
-                    bind:value={grupoData.codigo}
-                    placeholder="Ex: ROU"
-                />
-            </div>
-            <div class="grid gap-2">
-                <Label for="descricao">Descrição</Label>
-                <Input
-                    id="descricao"
-                    bind:value={grupoData.descricao}
-                    placeholder="Ex: Roupas de Verão"
-                />
-            </div>
-        </div>
-
-        <Dialog.Footer>
-            <Button variant="outline" onclick={() => (dialog = null)}>
-                Cancelar
-            </Button>
-            <Button onclick={save}>Salvar</Button>
-        </Dialog.Footer>
-    </Dialog.Content>
-</Dialog.Root>

@@ -1,214 +1,224 @@
 <script lang="ts">
-  import Route from "@lucide/svelte/icons/route";
-  import * as Card from "$lib/components/ui/card/index.js";
-  import * as Dialog from "$lib/components/ui/dialog/index.js";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-  import * as Table from "$lib/components/ui/table/index.js";
-  import { Button } from "@/components/ui/button/index";
-  import { Input } from "@/components/ui/input/index";
-  import { Label } from "@/components/ui/label/index";
-  import db, { queryHelper } from "@/db/db.svelte";
-  import type { Praca, Rota } from "@/types";
-  import Ellipsis from "@lucide/svelte/icons/ellipsis";
-  import PencilLine from "@lucide/svelte/icons/pencil-line";
-  import Plus from "@lucide/svelte/icons/plus";
-  import Trash2 from "@lucide/svelte/icons/trash-2";
-  import { onMount } from "svelte";
-  import { toast } from "svelte-sonner";
+    import { goto } from "$app/navigation";
+    import { Button } from "@/components/ui/button/index";
+    import * as Card from "@/components/ui/card/index.js";
+    import { Input } from "@/components/ui/input/index";
+    import * as Table from "@/components/ui/table/index.js";
+    import { Spinner } from "@/components/ui/spinner";
+    import db from "@/db/db.svelte";
+    import Id from "@/id.svelte";
+    import PencilLine from "@lucide/svelte/icons/pencil-line";
+    import Plus from "@lucide/svelte/icons/plus";
+    import Route from "@lucide/svelte/icons/route";
+    import Search from "@lucide/svelte/icons/search";
+    import Trash2 from "@lucide/svelte/icons/trash-2";
+    import { onMount } from "svelte";
+    import { toast } from "svelte-sonner";
+    import PaginationControl from "@/components/PaginationControl.svelte";
 
-  let routes = $state<Array<Rota>>([]);
-  let pracas = $state<Array<Praca>>([]);
-  let dialog = $state<string | null>(null);
-
-  let routeData = $state<Partial<Rota>>({
-    codigo: "",
-    nome: "",
-    bairro: "",
-    praca_id: 0,
-  });
-
-  async function save() {
-    try {
-      const dataToSave = { ...routeData };
-      delete (dataToSave as any).data_cadastro;
-
-      let q = queryHelper(dataToSave);
-      let query = "";
-
-      if (dataToSave.id) {
-        query = `UPDATE rotas SET ${q.setClauses} WHERE id = ${dataToSave.id}`;
-      } else {
-        query = `INSERT INTO rotas (${q.columns}) VALUES (${q.placeholders})`;
-      }
-
-      await db.execute(query, q.values);
-
-      await load();
-      dialog = null;
-      toast.success(
-        `Rota ${dataToSave.id ? "atualizada" : "criada"} com sucesso!`
-      );
-    } catch (e: unknown) {
-      let message = "Erro desconhecido";
-      if (e instanceof Error) {
-        message = e.message;
-      }
-      toast.error(`Falha ao salvar rota: ${message}`);
-      console.error("Erro ao salvar rota:", e);
+    interface RotaExt {
+        id: number;
+        codigo: string;
+        nome: string;
+        bairro: string | null;
+        praca_nome: string | null;
     }
-  }
 
-  async function delete_(id: number) {
-    try {
-      await db.execute("DELETE FROM rotas WHERE id = $1", [id]);
-      await load();
-      toast.success("Rota excluído com sucesso!");
-    } catch (e: unknown) {
-      let message = "Erro desconhecido";
-      if (e instanceof Error) {
-        message = e.message;
-      }
-      toast.error(`Falha ao deletar rota: ${message}`);
-      console.error("Erro ao deletar rota:", e);
+    let routes = $state<Array<RotaExt>>([]);
+    let searchQuery = $state("");
+    let loading = $state(true);
+
+    // Pagination
+    let page = $state(1);
+    const perPage = 10;
+    let totalItems = $state(0);
+
+    let debounceTimer: ReturnType<typeof setTimeout>;
+
+    function handleSearch() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            page = 1;
+            load();
+        }, 300);
     }
-  }
 
-  async function load() {
-    try {
-      routes = (await db.select("SELECT * FROM rotas", [])) as Array<Rota>;
-      pracas = (await db.select("SELECT * FROM pracas", [])) as Array<Praca>;
-    } catch (e: unknown) {
-      let message = "Erro desconhecido";
-      if (e instanceof Error) {
-        message = e.message;
-      }
-      toast.error(`Falha ao carregar rotas: ${message}`);
-      console.error("Erro ao carregar rotas:", e);
+    $effect(() => {
+        if (page) load();
+    });
+
+    async function load() {
+        loading = true;
+        try {
+            const offset = (page - 1) * perPage;
+            let countQuery = `
+                SELECT COUNT(*) as count 
+                FROM rotas r
+                LEFT JOIN pracas p ON r.praca_id = p.id
+            `;
+            let selectQuery = `
+                SELECT r.*, p.nome as praca_nome
+                FROM rotas r
+                LEFT JOIN pracas p ON r.praca_id = p.id
+            `;
+            let params: any[] = [];
+
+            if (searchQuery) {
+                const search = `%${searchQuery}%`;
+                const whereClause = `
+                    WHERE r.nome LIKE $1 
+                    OR r.codigo LIKE $1 
+                    OR r.bairro LIKE $1 
+                    OR p.nome LIKE $1
+                `;
+                countQuery += whereClause;
+                selectQuery += whereClause;
+                params.push(search);
+            }
+
+            selectQuery += ` ORDER BY r.nome ASC LIMIT ${perPage} OFFSET ${offset}`;
+
+            const countResult = (await db.select(countQuery, params)) as [
+                { count: number },
+            ];
+            totalItems = countResult[0].count;
+
+            routes = (await db.select(selectQuery, params)) as Array<RotaExt>;
+        } catch (e: any) {
+            console.error(e);
+            toast.error("Erro ao carregar rotas do banco de dados.");
+        } finally {
+            loading = false;
+        }
     }
-  }
 
-  onMount(() => load());
+    async function delete_(id: number) {
+        if (!confirm("Tem certeza que deseja excluir esta rota?")) return;
+        try {
+            await db.execute("DELETE FROM rotas WHERE id = $1", [id]);
+            await load();
+            toast.success("Rota excluída com sucesso!");
+        } catch (e: any) {
+            toast.error(e.message || "Erro ao excluir rota");
+            console.error(e);
+        }
+    }
+
+    onMount(() => load());
 </script>
 
 <Card.Root class="m-10">
-  <Card.Header class="flex w-full">
-    <Card.Title class="text-3xl flex items-center gap-2">
-      <Route class="h-8 w-8 text-primary" />
-      Gerenciamento de Rotas
-    </Card.Title>
-    <Button
-      class="ml-auto cursor-pointer"
-      variant="outline"
-      size="lg"
-      onclick={() => {
-        dialog = "new";
-      }}
-    >
-      Nova rota
-      <Plus class="stroke-2" />
-    </Button>
-  </Card.Header>
-  <Card.Content>
-    <Table.Root>
-      <Table.Caption>Lista de vendedores.</Table.Caption>
-      <Table.Header>
-        <Table.Row>
-          <Table.Head>Código</Table.Head>
-          <Table.Head>Praça</Table.Head>
-          <Table.Head>Bairro</Table.Head>
-          <Table.Head>Nome</Table.Head>
-          <Table.Head class="w-12.5"></Table.Head>
-        </Table.Row>
-      </Table.Header>
-      <Table.Body>
-        {#each routes as route, i (route.id)}
-          <Table.Row>
-            <Table.Cell>{route.codigo}</Table.Cell>
-            <Table.Cell class="text-primary">
-              {pracas.find((p) => p.id === route.praca_id)?.nome || "N/A"}
-            </Table.Cell>
-            <Table.Cell>{route.bairro}</Table.Cell>
-            <Table.Cell>{route.nome}</Table.Cell>
-            <Table.Cell>
-              <Button
-                variant="ghost"
-                size="icon-lg"
-                onclick={() => {
-                  routeData = { ...route };
-                  dialog = "edit";
-                }}
-              >
-                <PencilLine class="h-4 w-4 stroke-3 stroke-lime-400" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-lg"
-                onclick={() => delete_(route.id)}
-              >
-                <Trash2 class="h-4 w-4 stroke-3 stroke-red-500" />
-              </Button>
-            </Table.Cell>
-          </Table.Row>
-        {/each}
-      </Table.Body>
-    </Table.Root>
-  </Card.Content>
-</Card.Root>
-
-<Dialog.Root
-  open={dialog != null}
-  onOpenChange={(e) =>
-    e
-      ? null
-      : ((dialog = null),
-        (routeData = { codigo: "", nome: "", bairro: "", praca_id: 0 }))}
->
-  <Dialog.Content class="gap-10">
-    <Dialog.Header>
-      <Dialog.Title>
-        {#if dialog == "new"}
-          Nova rota
-        {:else if dialog == "edit"}
-          Editar rota
-        {/if}
-      </Dialog.Title>
-    </Dialog.Header>
-
-    <div class="flex flex-col gap-5">
-      <div class="flex flex-col gap-3">
-        <Label for="code">Codigo:</Label>
-        <Input id="code" bind:value={routeData.codigo} placeholder="R001..." />
-      </div>
-      <div class="flex flex-col gap-3">
-        <Label for="praca">Praça:</Label>
-        <select
-          id="praca"
-          bind:value={routeData.praca_id}
-          class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          required
+    <Card.Header class="flex flex-row items-center w-full">
+        <div>
+            <Card.Title class="text-3xl flex items-center gap-2">
+                <Route class="h-8 w-8 text-primary" />
+                Gerenciamento de Rotas
+            </Card.Title>
+            <Card.Description>
+                Controle de itinerários e bairros de atendimento.
+            </Card.Description>
+        </div>
+        <Button
+            class="ml-auto cursor-pointer gap-2"
+            variant="outline"
+            size="lg"
+            onclick={() => {
+                goto("/rotas/novo");
+            }}
         >
-          <option value={0}>Selecione uma praça...</option>
-          {#each pracas as p}
-            <option value={p.id}>{p.codigo} - {p.nome}</option>
-          {/each}
-        </select>
-      </div>
-      <div class="flex flex-col gap-3">
-        <Label for="name">Nome:</Label>
-        <Input id="name" bind:value={routeData.nome} placeholder="..." />
-      </div>
+            <Plus class="h-4 w-4" />
+            Nova Rota
+        </Button>
+    </Card.Header>
+    <Card.Content>
+        <div class="mb-6 flex items-center gap-4">
+            <div class="relative flex-1 max-w-sm">
+                <Search
+                    class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
+                />
+                <Input
+                    type="search"
+                    placeholder="Pesquisar por nome, código, bairro ou praça..."
+                    class="pl-8"
+                    bind:value={searchQuery}
+                    oninput={handleSearch}
+                />
+            </div>
+        </div>
 
-      <div class="flex flex-col gap-3">
-        <Label for="email">Bairro:</Label>
-        <Input id="email" bind:value={routeData.bairro} placeholder="..." />
-      </div>
-    </div>
+        {#if loading}
+            <div class="flex h-48 items-center justify-center">
+                <Spinner class="h-8 w-8 text-primary" />
+            </div>
+        {:else}
+            <Table.Root>
+                <Table.Header>
+                    <Table.Row>
+                        <Table.Head>Código</Table.Head>
+                        <Table.Head>Nome</Table.Head>
+                        <Table.Head>Bairro</Table.Head>
+                        <Table.Head>Praça (Área)</Table.Head>
+                        <Table.Head class="w-24 text-right">Ações</Table.Head>
+                    </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                    {#each routes as r (r.id)}
+                        <Table.Row class="hover:bg-muted/50 transition-colors">
+                            <Table.Cell
+                                class="font-mono font-bold text-muted-foreground"
+                                >{r.codigo}</Table.Cell
+                            >
+                            <Table.Cell class="font-bold text-primary">
+                                {r.nome}
+                            </Table.Cell>
+                            <Table.Cell>{r.bairro || "—"}</Table.Cell>
+                            <Table.Cell>
+                                <span
+                                    class="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border/50"
+                                >
+                                    {r.praca_nome || "Não atribuída"}
+                                </span>
+                            </Table.Cell>
+                            <Table.Cell class="text-right whitespace-nowrap">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onclick={() => {
+                                        Id.id = r.id;
+                                        goto(`/rotas/id/edit`);
+                                    }}
+                                >
+                                    <PencilLine
+                                        class="h-4 w-4 stroke-3 text-lime-600"
+                                    />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onclick={() => delete_(r.id)}
+                                >
+                                    <Trash2
+                                        class="h-4 w-4 stroke-3 text-red-500"
+                                    />
+                                </Button>
+                            </Table.Cell>
+                        </Table.Row>
+                    {:else}
+                        <Table.Row>
+                            <Table.Cell
+                                colspan={5}
+                                class="text-center py-12 text-muted-foreground italic"
+                            >
+                                Nenhuma rota encontrada.
+                            </Table.Cell>
+                        </Table.Row>
+                    {/each}
+                </Table.Body>
+            </Table.Root>
+        {/if}
 
-    <Dialog.Footer class="grid grid-cols-2 gap-5">
-      <Button variant="outline" onclick={() => (dialog = null)}>
-        Cancelar
-      </Button>
-      <Button onclick={save}>Salvar</Button>
-    </Dialog.Footer>
-  </Dialog.Content>
-</Dialog.Root>
+        <div class="mt-4">
+            <PaginationControl count={totalItems} {perPage} bind:page />
+        </div>
+    </Card.Content>
+</Card.Root>

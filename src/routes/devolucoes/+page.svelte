@@ -1,278 +1,225 @@
 <script lang="ts">
-    import * as Card from "$lib/components/ui/card/index.js";
-    import { Button } from "$lib/components/ui/button/index";
-    import { Input } from "$lib/components/ui/input/index";
-    import { Label } from "$lib/components/ui/label/index";
-    import { Textarea } from "$lib/components/ui/textarea/index";
-    import type { Produto } from "$lib/types";
-    import db, { queryHelper } from "@/db/db.svelte";
+    import { goto } from "$app/navigation";
+    import { Button } from "@/components/ui/button/index";
+    import * as Card from "@/components/ui/card/index.js";
+    import { Input } from "@/components/ui/input/index";
+    import { Spinner } from "@/components/ui/spinner";
+    import * as Table from "@/components/ui/table/index.js";
+    import db from "@/db/db.svelte";
+    import Activity from "@lucide/svelte/icons/activity";
+    import Calendar from "@lucide/svelte/icons/calendar";
+    import Plus from "@lucide/svelte/icons/plus";
+    import Search from "@lucide/svelte/icons/search";
+    import Truck from "@lucide/svelte/icons/truck";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
-    import Truck from "@lucide/svelte/icons/truck";
-    import Ban from "@lucide/svelte/icons/ban";
-    import Search from "@lucide/svelte/icons/search";
-    import X from "@lucide/svelte/icons/x";
+    import PaginationControl from "@/components/PaginationControl.svelte";
 
-    let produtos = $state<Array<Produto>>([]);
+    let movements = $state<any[]>([]);
+    let loading = $state(true);
     let searchQuery = $state("");
-    let filteredProdutos = $derived(
-        produtos
-            .filter(
-                (p) =>
-                    p.descricao
-                        .toLowerCase()
-                        .includes(searchQuery.toLowerCase()) ||
-                    p.codigo.toLowerCase().includes(searchQuery.toLowerCase()),
-            )
-            .slice(0, 10),
-    );
 
-    let selectedProduto = $state<Produto | null>(null);
-    let amount = $state(1);
-    let observations = $state("");
-    let loading = $state(false);
+    // Pagination
+    let page = $state(1);
+    const perPage = 10;
+    let totalItems = $state(0);
 
-    async function load() {
-        try {
-            produtos = (await db.select(
-                "SELECT * FROM produtos",
-                [],
-            )) as Array<Produto>;
-        } catch (e: any) {
-            console.error(e);
-            toast.error("Erro ao carregar produtos do banco de dados.");
-        }
+    let debounceTimer: ReturnType<typeof setTimeout>;
+
+    function handleSearch() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            page = 1;
+            load();
+        }, 300);
     }
 
-    onMount(() => load());
+    $effect(() => {
+        if (page) load();
+    });
 
-    async function handleRegister(type: "devolucao" | "defeito") {
-        if (!selectedProduto) {
-            toast.error("Por favor, selecione um produto.");
-            return;
-        }
-
+    async function load() {
         loading = true;
         try {
-            const dataToInsert = {
-                produto_id: selectedProduto.id,
-                quantidade: amount,
-                tipo_movimentacao: type,
-                observacoes: observations,
-            };
+            const offset = (page - 1) * perPage;
+            let countQuery = `
+                SELECT COUNT(*) as count 
+                FROM movimentacoes_estoque m
+                JOIN produto_variacoes v ON m.variacao_id = v.id
+                JOIN produtos p ON v.produto_id = p.id
+                WHERE m.tipo IN ('devolucao', 'perda')
+            `;
+            let selectQuery = `
+                 SELECT
+                    m.*,
+                    p.descricao as produto_descricao,
+                    p.codigo as produto_codigo,
+                    v.tamanho,
+                    v.cor
+                 FROM movimentacoes_estoque m
+                 JOIN produto_variacoes v ON m.variacao_id = v.id
+                 JOIN produtos p ON v.produto_id = p.id
+                 WHERE m.tipo IN ('devolucao', 'perda')
+            `;
+            let params: any[] = [];
 
-            let q = queryHelper(dataToInsert);
-            await db.execute(
-                `INSERT INTO movimentacoes_estoque (${q.columns}) VALUES (${q.placeholders})`,
-                q.values,
-            );
-
-            // Important: We should also update the product's stock.
-            // In a real app we might use a trigger or a transaction.
-            // For now, let's just update it.
-            if (type === "devolucao") {
-                await db.execute(
-                    "UPDATE produtos SET estoque_atual = estoque_atual + $1 WHERE id = $2",
-                    [amount, selectedProduto.id],
-                );
-            } else if (type === "defeito") {
-                // Maybe move to a different stock or just deduct?
-                // In the original it seems it was just a register.
-                // Let's assume for now it just records it.
+            if (searchQuery) {
+                const search = `%${searchQuery}%`;
+                const whereClause = `
+                    AND (p.descricao LIKE $1 OR p.codigo LIKE $1)
+                `;
+                countQuery += whereClause;
+                selectQuery += whereClause;
+                params.push(search);
             }
 
-            toast.success("Devolução registrada com sucesso!");
-            reset();
+            selectQuery += ` ORDER BY m.data_movimento DESC LIMIT ${perPage} OFFSET ${offset}`;
+
+            const countResult = (await db.select(countQuery, params)) as [{ count: number }];
+            totalItems = countResult[0].count;
+
+            movements = (await db.select(
+                selectQuery,
+                params,
+            )) as any[];
         } catch (e: any) {
-            toast.error(e.message || "Erro ao registrar devolução");
             console.error(e);
+            toast.error("Erro ao carregar histórico de devoluções.");
         } finally {
             loading = false;
         }
     }
 
-    function reset() {
-        selectedProduto = null;
-        amount = 1;
-        observations = "";
-        searchQuery = "";
+    function formatDate(dateStr: string) {
+        return new Date(dateStr).toLocaleString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
     }
+
+    onMount(() => load());
 </script>
 
-<div class="p-6 max-w-2xl mx-auto">
-    <Card.Root
-        class="overflow-hidden border-2 border-primary/20 shadow-xl pt-0"
-    >
-        <Card.Header class="bg-primary/5 pb-8 pt-5">
-            <div class="flex justify-center mb-4">
-                <div class="p-3 rounded-full bg-primary/10">
-                    <Truck class="h-8 w-8 text-primary" />
-                </div>
-            </div>
-            <Card.Title class="text-3xl text-center"
-                >Registrar Devolução</Card.Title
-            >
-            <Card.Description class="text-center text-lg">
-                Gerencie retornos de produtos e ajuste o estoque de forma
-                simples.
+<Card.Root class="m-10">
+    <Card.Header class="flex flex-row items-center w-full">
+        <div>
+            <Card.Title class="text-3xl flex items-center gap-2">
+                <Truck class="h-8 w-8 text-primary" />
+                Histórico de Devoluções
+            </Card.Title>
+            <Card.Description>
+                Registro de movimentações de retorno e produtos com defeito.
             </Card.Description>
-        </Card.Header>
-
-        <Card.Content class="space-y-8 pt-8 px-10">
-            <!-- Step 1: Find Product -->
-            <div class="space-y-4">
-                <Label class="text-lg font-semibold flex items-center gap-2">
-                    <span
-                        class="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs"
-                        >1</span
-                    >
-                    Encontre o produto
-                </Label>
-
-                {#if !selectedProduto}
-                    <div class="relative">
-                        <Search
-                            class="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
-                        />
-                        <Input
-                            type="text"
-                            placeholder="Digite o nome ou código do produto..."
-                            class="pl-10 h-12 text-lg"
-                            bind:value={searchQuery}
-                        />
-
-                        {#if searchQuery.length > 1}
-                            <div
-                                class="absolute z-100 w-full mt-2 bg-popover border rounded-md shadow-lg max-h-60 overflow-y-auto"
-                            >
-                                {#each filteredProdutos as p}
-                                    <button
-                                        class="w-full text-left px-4 py-3 hover:bg-accent hover:text-accent-foreground transition-colors border-b last:border-0"
-                                        onclick={() => {
-                                            selectedProduto = p;
-                                            searchQuery = "";
-                                        }}
-                                    >
-                                        <div class="font-bold">{p.codigo}</div>
-                                        <div
-                                            class="text-sm text-muted-foreground"
-                                        >
-                                            {p.descricao}
-                                        </div>
-                                    </button>
-                                {:else}
-                                    <div
-                                        class="p-4 text-center text-muted-foreground"
-                                    >
-                                        Nenhum produto encontrado.
-                                    </div>
-                                {/each}
-                            </div>
-                        {/if}
-                    </div>
-                {:else}
-                    <div
-                        class="flex items-center justify-between p-4 rounded-lg bg-primary/5 border border-primary/20"
-                    >
-                        <div>
-                            <div class="font-bold text-lg">
-                                {selectedProduto.codigo}
-                            </div>
-                            <div class="text-muted-foreground">
-                                {selectedProduto.descricao}
-                            </div>
-                        </div>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onclick={() => (selectedProduto = null)}
-                        >
-                            <X class="h-4 w-4" /> Alterar
-                        </Button>
-                    </div>
-                {/if}
+        </div>
+        <Button
+            onclick={() => goto("/devolucoes/novo")}
+            class="ml-auto cursor-pointer gap-2"
+            variant="outline"
+            size="lg"
+        >
+            <Plus class="h-4 w-4" />
+            Nova Devolução
+        </Button>
+    </Card.Header>
+    <Card.Content>
+        <div class="mb-6 flex items-center gap-4 h-full">
+            <div class="relative flex-1 max-w-sm">
+                <Search
+                    class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
+                />
+                <Input
+                    type="search"
+                    placeholder="Pesquisar por produto ou código..."
+                    class="pl-8"
+                    bind:value={searchQuery}
+                    oninput={handleSearch}
+                />
             </div>
+        </div>
 
-            {#if selectedProduto}
-                <!-- Step 2: Quantity -->
-                <div
-                    class="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300"
-                >
-                    <Label
-                        class="text-lg font-semibold flex items-center gap-2"
-                    >
-                        <span
-                            class="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs"
-                            >2</span
-                        >
-                        Informe a quantidade
-                    </Label>
-                    <Input
-                        type="number"
-                        bind:value={amount}
-                        min="1"
-                        class="h-12 text-xl font-bold text-center"
-                    />
-                </div>
+        {#if loading}
+            <div class="flex h-48 items-center justify-center">
+                <Spinner class="h-8 w-8 text-primary" />
+            </div>
+        {:else}
+            <Table.Root>
+                <Table.Header>
+                    <Table.Row>
+                        <Table.Head>Data</Table.Head>
+                        <Table.Head>Produto</Table.Head>
+                        <Table.Head>Variação</Table.Head>
+                        <Table.Head>Tipo</Table.Head>
+                        <Table.Head class="text-right">Qtd</Table.Head>
+                    </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                    {#each movements as movement}
+                        <Table.Row class="hover:bg-muted/50 transition-colors">
+                            <Table.Cell>
+                                <div
+                                    class="flex items-center gap-2 text-muted-foreground font-medium"
+                                >
+                                    <Calendar class="h-4 w-4" />
+                                    {formatDate(movement.data_movimento)}
+                                </div>
+                            </Table.Cell>
+                            <Table.Cell>
+                                <div class="flex flex-col">
+                                    <span
+                                        class="font-bold text-primary uppercase tracking-tight"
+                                        >{movement.produto_codigo}</span
+                                    >
+                                    <span class="text-xs text-muted-foreground"
+                                        >{movement.produto_descricao}</span
+                                    >
+                                </div>
+                            </Table.Cell>
+                            <Table.Cell>
+                                <span
+                                    class="inline-flex items-center rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-600 ring-1 ring-inset ring-zinc-500/10"
+                                >
+                                    {movement.tamanho} / {movement.cor}
+                                </span>
+                            </Table.Cell>
+                            <Table.Cell>
+                                {#if movement.tipo === "devolucao"}
+                                    <span
+                                        class="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-bold text-blue-500 border border-blue-500/20 uppercase"
+                                    >
+                                        <Truck class="h-3 w-3" />
+                                        Devolução
+                                    </span>
+                                {:else}
+                                    <span
+                                        class="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-bold text-destructive border border-destructive/20 uppercase"
+                                    >
+                                        <Activity class="h-3 w-3" />
+                                        Defeito
+                                    </span>
+                                {/if}
+                            </Table.Cell>
+                            <Table.Cell class="text-right font-black text-lg">
+                                {movement.quantidade}
+                            </Table.Cell>
+                        </Table.Row>
+                    {:else}
+                        <Table.Row>
+                            <Table.Cell
+                                colspan={5}
+                                class="h-32 text-center text-muted-foreground italic"
+                                >Nenhuma devolução registrada.</Table.Cell
+                            >
+                        </Table.Row>
+                    {/each}
+                </Table.Body>
+            </Table.Root>
+        {/if}
 
-                <!-- Step 3: Observations -->
-                <div
-                    class="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500"
-                >
-                    <Label
-                        class="text-lg font-semibold flex items-center gap-2"
-                    >
-                        <span
-                            class="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs"
-                            >3</span
-                        >
-                        Observações (Opcional)
-                    </Label>
-                    <Textarea
-                        placeholder="Ex: Cliente desistiu da compra / Produto com costura solta..."
-                        bind:value={observations}
-                        class="min-h-[100px] text-lg"
-                    />
-                </div>
-
-                <!-- Step 4: Reason/Action -->
-                <div
-                    class="space-y-6 pt-4 animate-in fade-in slide-in-from-top-4 duration-700"
-                >
-                    <div
-                        class="text-center text-lg font-semibold text-muted-foreground"
-                    >
-                        Qual o motivo do retorno?
-                    </div>
-                    <div class="grid grid-cols-2 gap-6">
-                        <Button
-                            variant="default"
-                            class="h-24 flex-col gap-2 text-lg shadow-lg hover:shadow-xl transition-all"
-                            disabled={loading}
-                            onclick={() => handleRegister("devolucao")}
-                        >
-                            <Truck class="h-6 w-6" />
-                            <span>Devolução Normal</span>
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            class="h-24 flex-col gap-2 text-lg shadow-lg hover:shadow-xl transition-all"
-                            disabled={loading}
-                            onclick={() => handleRegister("defeito")}
-                        >
-                            <Ban class="h-6 w-6" />
-                            <span>Produto com Defeito</span>
-                        </Button>
-                    </div>
-                    {#if loading}
-                        <div class="flex justify-center">
-                            <div
-                                class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
-                            ></div>
-                        </div>
-                    {/if}
-                </div>
-            {/if}
-        </Card.Content>
-    </Card.Root>
-</div>
+        <div class="mt-4">
+            <PaginationControl count={totalItems} {perPage} bind:page />
+        </div>
+    </Card.Content>
+</Card.Root>

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
-    import * as Sidebar from "$lib/components/ui/sidebar/index.js";
+    import * as Sidebar from "@/components/ui/sidebar/index.js";
 
     let { path = "", children } = $props();
 </script>

@@ -1,357 +1,292 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
-  import * as Card from "$lib/components/ui/card/index.js";
-  import * as Dialog from "$lib/components/ui/dialog/index.js";
-  import * as Table from "$lib/components/ui/table/index.js";
-  import { Button } from "@/components/ui/button/index";
-  import { Input } from "@/components/ui/input/index";
-  import { Label } from "@/components/ui/label/index";
-  import db, { queryHelper } from "@/db/db.svelte";
-  import type { Pedido, PedidoItem } from "@/types";
-  import BadgeCheck from "@lucide/svelte/icons/badge-check";
-  import Ban from "@lucide/svelte/icons/ban";
-  import ClockFading from "@lucide/svelte/icons/clock-fading";
-  import Eye from "@lucide/svelte/icons/eye";
-  import Handbag from "@lucide/svelte/icons/handbag";
-  import PencilLine from "@lucide/svelte/icons/pencil-line";
-  import Plus from "@lucide/svelte/icons/plus";
-  import Search from "@lucide/svelte/icons/search";
-  import Trash2 from "@lucide/svelte/icons/trash-2";
-  import X from "@lucide/svelte/icons/x";
-  import { onMount } from "svelte";
-  import { toast } from "svelte-sonner";
-  import ReceiptDialog from "./receipt-dialog.svelte";
+    import { goto } from "$app/navigation";
+    import PaginationControl from "@/components/PaginationControl.svelte";
+    import { Button } from "@/components/ui/button/index";
+    import * as Card from "@/components/ui/card/index.js";
+    import { Input } from "@/components/ui/input/index";
+    import { Spinner } from "@/components/ui/spinner";
+    import * as Table from "@/components/ui/table/index.js";
+    import db from "@/db/db.svelte";
+    import Id from "@/id.svelte";
+    import type { Pedido } from "@/types";
+    import BadgeCheck from "@lucide/svelte/icons/badge-check";
+    import Ban from "@lucide/svelte/icons/ban";
+    import ClockFading from "@lucide/svelte/icons/clock-fading";
+    import Eye from "@lucide/svelte/icons/eye";
+    import Handbag from "@lucide/svelte/icons/handbag";
+    import PencilLine from "@lucide/svelte/icons/pencil-line";
+    import Plus from "@lucide/svelte/icons/plus";
+    import Search from "@lucide/svelte/icons/search";
+    import Trash2 from "@lucide/svelte/icons/trash-2";
+    import X from "@lucide/svelte/icons/x";
+    import { onMount } from "svelte";
+    import { toast } from "svelte-sonner";
 
-  const formatter = new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+    const formatter = new Intl.DateTimeFormat("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    });
 
-  type Order = Pedido & {
-    cliente_nome: string;
-    vendedor_nome: string;
-    itens: Array<PedidoItem>;
-  };
+    type Order = Pedido & {
+        cliente_nome: string;
+        vendedor_nome: string;
+    };
 
-  let orders = $state<Array<Order>>([]);
-  let orderData = $state<Partial<Pedido>>({
-    numero_pedido: "",
-    cliente_id: 0,
-    vendedor_id: 0,
-    data_pedido: new Date() as any,
-    valor_total: 0,
-    situacao: "emitido",
-  });
-  let clientes = $state<Array<any>>([]);
-  let vendedores = $state<Array<any>>([]);
-  let dialog = $state<string | null>(null);
-  let receipt = $state(false);
-  let searchQuery = $state("");
+    let orders = $state<Array<Order>>([]);
+    let searchQuery = $state("");
+    let loading = $state(true);
+    let page = $state(1);
+    let perPage = 10;
+    let totalItems = $state(0);
 
-  let filteredOrders = $derived(
-    orders.filter(
-      (o) =>
-        o.numero_pedido.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.cliente_nome?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
+    let debounceTimer: ReturnType<typeof setTimeout>;
 
-  async function save() {
-    try {
-      let q = queryHelper(orderData);
-      let query = "";
-
-      if (orderData.id) {
-        query = `UPDATE pedidos SET ${q.setClauses} WHERE id = ${orderData.id}`;
-      } else {
-        query = `INSERT INTO pedidos (${q.columns}) VALUES (${q.placeholders})`;
-      }
-
-      await db.execute(query, q.values);
-
-      await load();
-      dialog = null;
-      toast.success(
-        `Pedido ${orderData.id ? "atualizado" : "criado"} com sucesso!`
-      );
-    } catch (e: unknown) {
-      let message = "Erro desconhecido";
-      if (e instanceof Error) {
-        message = e.message;
-      }
-      toast.error(`Falha ao salvar pedido: ${message}`);
-      console.error("Erro ao salvar pedido:", e);
-      dialog = null;
+    function handleSearch() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            page = 1;
+            load();
+        }, 300);
     }
-  }
 
-  async function delete_(id: number) {
-    try {
-      await db.execute("DELETE FROM pedidos WHERE id = $1", [id]);
-      await load();
-      toast.success("Pedido excluído com sucesso!");
-    } catch (e: unknown) {
-      let message = "Erro desconhecido";
-      if (e instanceof Error) {
-        message = e.message;
-      }
-      toast.error(`Falha ao deletar pedido: ${message}`);
-      console.error("Erro ao deletar pedido:", e);
+    $effect(() => {
+        if (page) load();
+    });
+
+    async function delete_(id: number) {
+        if (!confirm("Tem certeza que deseja excluir este pedido?")) return;
+        try {
+            await db.execute("DELETE FROM pedidos WHERE id = $1", [id]);
+            await load();
+            toast.success("Pedido excluído com sucesso!");
+        } catch (e: unknown) {
+            let message = "Erro desconhecido";
+            if (e instanceof Error) {
+                message = e.message;
+            }
+            toast.error(`Falha ao deletar pedido: ${message}`);
+            console.error("Erro ao deletar pedido:", e);
+        }
     }
-  }
 
-  async function load() {
-    try {
-      const ordersList = (await db.select(
-        `
+    async function load() {
+        loading = true;
+        try {
+            const offset = (page - 1) * perPage;
+            let countQuery = `
+                SELECT COUNT(*) as count
+                FROM pedidos p
+                LEFT JOIN clientes c ON p.cliente_id = c.id
+                LEFT JOIN vendedores v ON p.vendedor_id = v.id
+            `;
+            let selectQuery = `
                 SELECT p.*, c.nome as cliente_nome, v.nome as vendedor_nome
                 FROM pedidos p
                 LEFT JOIN clientes c ON p.cliente_id = c.id
                 LEFT JOIN vendedores v ON p.vendedor_id = v.id
-            `,
-        []
-      )) as Array<Order>;
+            `;
+            let params: any[] = [];
 
-      orders = ordersList;
-      clientes = (await db.select("SELECT id, nome FROM clientes", [])) as any;
-      vendedores = (await db.select(
-        "SELECT id, nome FROM vendedores",
-        []
-      )) as any;
+            if (searchQuery) {
+                const search = `%${searchQuery}%`;
+                const whereClause =
+                    " WHERE p.numero_pedido LIKE $1 OR c.nome LIKE $1";
+                countQuery += whereClause;
+                selectQuery += whereClause;
+                params.push(search);
+            }
 
-      // Load items for each order
-      for (let i = 0; i < orders.length; i++) {
-        const items = (await db.select(
-          "SELECT * FROM pedido_itens WHERE pedido_id = $1",
-          [orders[i].id]
-        )) as Array<PedidoItem>;
-        orders[i].itens = items;
-      }
-    } catch (e: unknown) {
-      console.error("Erro ao carregar dados:", e);
-      toast.error("Erro ao carregar dados do banco de dados.");
+            selectQuery += ` ORDER BY p.data_pedido DESC, p.id DESC LIMIT ${perPage} OFFSET ${offset}`;
+
+            const countResult = (await db.select(countQuery, params)) as [
+                { count: number },
+            ];
+            totalItems = countResult[0].count;
+
+            const ordersList = (await db.select(
+                selectQuery,
+                params,
+            )) as Array<Order>;
+
+            orders = ordersList;
+        } catch (e: unknown) {
+            console.error("Erro ao carregar dados:", e);
+            toast.error("Erro ao carregar dados do banco de dados.");
+        } finally {
+            loading = false;
+        }
     }
-  }
 
-  onMount(() => load());
+    onMount(() => load());
+
+    function formatCurrency(v: number | null) {
+        return (v || 0).toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+        });
+    }
+
+    function getStatusVariant(status: string) {
+        switch (status) {
+            case "faturado":
+                return "bg-green-100 text-green-700 border-green-200";
+            case "pendente":
+                return "bg-amber-100 text-amber-700 border-amber-200";
+            case "cancelado":
+                return "bg-red-100 text-red-700 border-red-200";
+            case "devolvido":
+                return "bg-blue-100 text-blue-700 border-blue-200";
+            default:
+                return "bg-gray-100 text-gray-700 border-gray-200";
+        }
+    }
 </script>
 
 <Card.Root class="m-10">
-  <Card.Header class="flex w-full">
-    <Card.Title class="text-3xl flex items-center gap-2">
-      <Handbag class="h-8 w-8 text-primary" />
-      Gerenciamento de Pedidos
-    </Card.Title>
-    <Button
-      class="ml-auto cursor-pointer"
-      variant="outline"
-      size="lg"
-      onclick={() => {
-        goto("/pedidos/novo");
-      }}
-    >
-      Novo pedido
-      <Plus class="stroke-2" />
-    </Button>
-  </Card.Header>
-  <Card.Content>
-    <div class="mb-6 flex items-center gap-4">
-      <div class="relative flex-1 max-w-sm">
-        <Search
-          class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
-        />
-        <Input
-          type="search"
-          placeholder="Pesquisar por pedido ou cliente..."
-          class="pl-8"
-          bind:value={searchQuery}
-        />
-      </div>
-    </div>
-
-    <Table.Root>
-      <Table.Caption>Lista de pedidos.</Table.Caption>
-      <Table.Header>
-        <Table.Row>
-          <Table.Head>N° Pedido</Table.Head>
-          <Table.Head>Cliente</Table.Head>
-          <Table.Head>Vendedor</Table.Head>
-          <Table.Head>Data</Table.Head>
-          <Table.Head>Valor Total</Table.Head>
-          <Table.Head>Situação</Table.Head>
-          <Table.Head class="w-12.5"></Table.Head>
-        </Table.Row>
-      </Table.Header>
-      <Table.Body>
-        {#each filteredOrders as order (order.id)}
-          <Table.Row>
-            <Table.Cell>{order.numero_pedido}</Table.Cell>
-            <Table.Cell>{order.cliente_nome}</Table.Cell>
-            <Table.Cell>{order.vendedor_nome}</Table.Cell>
-            <Table.Cell>
-              {formatter.format(new Date(order.data_pedido))}
-            </Table.Cell>
-            <Table.Cell>R$ {order.valor_total}</Table.Cell>
-            <Table.Cell class="[&>svg]:size-4 [&>svg]:inline">
-              {order.situacao}
-              {#if order.situacao == "vendido"}
-                <BadgeCheck class="stroke-lime-400" />
-              {:else if order.situacao == "emitido"}
-                <ClockFading class="stroke-amber-400" />
-              {:else if order.situacao == "devolvido"}
-                <X class="stroke-blue-400" />
-              {:else if order.situacao == "retornado"}
-                <X class="stroke-orange-400" />
-              {:else if order.situacao == "cancelado"}
-                <Ban class="stroke-red-500" />
-              {:else}
-                <X class="stroke-muted-foreground" />
-              {/if}
-            </Table.Cell>
-            <Table.Cell>
-              <Button
-                variant="ghost"
-                size="icon-lg"
-                onclick={() => {
-                  goto(`/pedidos/${order.id}`);
-                }}
-              >
-                <Eye class="h-4 w-4 stroke-3 stroke-primary" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-lg"
-                class="group"
-                onclick={() => {
-                  orderData = order;
-                  dialog = "edit";
-                }}
-              >
-                <PencilLine class="h-4 w-4 stroke-3 stroke-lime-400" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-lg"
-                onclick={() => delete_(order.id)}
-              >
-                <Trash2 class="h-4 w-4 stroke-3 stroke-red-500" />
-              </Button>
-            </Table.Cell>
-          </Table.Row>
-        {:else}
-          <Table.Row>
-            <Table.Cell
-              colspan={7}
-              class="text-center py-10 text-muted-foreground"
+    <Card.Header class="flex flex-row items-center w-full">
+        <div>
+            <Card.Title class="text-3xl flex items-center gap-2">
+                <Handbag class="h-8 w-8 text-primary" />
+                Gerenciamento de Pedidos
+            </Card.Title>
+            <Card.Description
+                >Acompanhe e gerencie as vendas da sua empresa.</Card.Description
             >
-              Nenhum pedido encontrado.
-            </Table.Cell>
-          </Table.Row>
-        {/each}
-      </Table.Body>
-    </Table.Root>
-  </Card.Content>
-</Card.Root>
+        </div>
+        <Button
+            class="ml-auto cursor-pointer"
+            variant="outline"
+            size="lg"
+            onclick={() => {
+                goto("/pedidos/novo");
+            }}
+        >
+            Nova pedido
+            <Plus class="ml-2 h-4 w-4" />
+        </Button>
+    </Card.Header>
+    <Card.Content>
+        <div class="mb-6 flex items-center gap-4">
+            <div class="relative flex-1 max-w-sm">
+                <Search
+                    class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
+                />
+                <Input
+                    type="search"
+                    placeholder="Pesquisar por pedido ou cliente..."
+                    class="pl-8"
+                    bind:value={searchQuery}
+                    oninput={handleSearch}
+                />
+            </div>
+        </div>
 
-<ReceiptDialog bind:open={receipt} bind:order={orderData as any} />
+        {#if loading}
+            <div class="flex h-48 items-center justify-center">
+                <Spinner class="h-8 w-8 text-primary" />
+            </div>
+        {:else}
+            <Table.Root>
+                <Table.Header>
+                    <Table.Row>
+                        <Table.Head>N° Pedido</Table.Head>
+                        <Table.Head>Cliente</Table.Head>
+                        <Table.Head>Vendedor</Table.Head>
+                        <Table.Head>Data</Table.Head>
+                        <Table.Head class="text-right">Valor Líquido</Table.Head
+                        >
+                        <Table.Head>Situação</Table.Head>
+                        <Table.Head class="w-12.5 text-right">Ações</Table.Head>
+                    </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                    {#each orders as order (order.id)}
+                        <Table.Row>
+                            <Table.Cell class="font-bold text-primary"
+                                >{order.numero_pedido}</Table.Cell
+                            >
+                            <Table.Cell>{order.cliente_nome}</Table.Cell>
+                            <Table.Cell>{order.vendedor_nome || "-"}</Table.Cell
+                            >
+                            <Table.Cell>
+                                {order.data_pedido
+                                    ? formatter.format(
+                                          new Date(order.data_pedido),
+                                      )
+                                    : "-"}
+                            </Table.Cell>
+                            <Table.Cell class="font-semibold text-right">
+                                {formatCurrency(order.valor_liquido)}
+                            </Table.Cell>
+                            <Table.Cell>
+                                <span
+                                    class={`px-2 py-1 rounded-full text-xs font-bold border ${getStatusVariant(order.situacao)} flex items-center gap-1 w-fit capitalize`}
+                                >
+                                    {#if order.situacao == "faturado"}
+                                        <BadgeCheck class="h-3 w-3" />
+                                    {:else if order.situacao == "pendente"}
+                                        <ClockFading class="h-3 w-3" />
+                                    {:else if order.situacao == "cancelado"}
+                                        <Ban class="h-3 w-3" />
+                                    {:else}
+                                        <X class="h-3 w-3" />
+                                    {/if}
+                                    {order.situacao}
+                                </span>
+                            </Table.Cell>
+                            <Table.Cell class="text-right whitespace-nowrap">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onclick={() => {
+                                        Id.id - order.id;
+                                        goto(`/pedidos/id`);
+                                    }}
+                                >
+                                    <Eye
+                                        class="h-4 w-4 stroke-3 text-primary"
+                                    />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onclick={() => {
+                                        Id.id = order.id;
+                                        goto(`/pedidos/id/edit/`);
+                                    }}
+                                >
+                                    <PencilLine
+                                        class="h-4 w-4 stroke-3 text-lime-600"
+                                    />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onclick={() => delete_(order.id)}
+                                >
+                                    <Trash2
+                                        class="h-4 w-4 stroke-3 text-red-500"
+                                    />
+                                </Button>
+                            </Table.Cell>
+                        </Table.Row>
+                    {:else}
+                        <Table.Row>
+                            <Table.Cell
+                                colspan={7}
+                                class="text-center py-10 text-muted-foreground"
+                            >
+                                Nenhum pedido encontrado.
+                            </Table.Cell>
+                        </Table.Row>
+                    {/each}
+                </Table.Body>
+            </Table.Root>
 
-<Dialog.Root
-  open={dialog != null}
-  onOpenChange={(e) =>
-    e
-      ? null
-      : ((dialog = null),
-        (orderData = {
-          numero_pedido: "",
-          cliente_id: 0,
-          vendedor_id: 0,
-          data_pedido: new Date() as any,
-          valor_total: 0,
-          situacao: "emitido",
-        }))}
->
-  <Dialog.Content class="gap-10">
-    <Dialog.Header>
-      <Dialog.Title>
-        {#if dialog == "new"}
-          Novo Pedido
-        {:else if dialog == "edit"}
-          Editar Pedido
+            <div class="mt-4">
+                <PaginationControl count={totalItems} {perPage} bind:page />
+            </div>
         {/if}
-      </Dialog.Title>
-    </Dialog.Header>
-
-    <div class="flex flex-col gap-5">
-      <div class="grid grid-cols-2 gap-4">
-        <div class="flex flex-col gap-3">
-          <Label for="num">N° Pedido:</Label>
-          <Input
-            id="num"
-            bind:value={orderData.numero_pedido}
-            placeholder="PED-100..."
-          />
-        </div>
-        <div class="flex flex-col gap-3">
-          <Label for="date">Data:</Label>
-          <Input id="date" type="date" bind:value={orderData.data_pedido} />
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-3">
-        <Label for="client">Cliente:</Label>
-        <select
-          id="client"
-          bind:value={orderData.cliente_id}
-          class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <option value={0}>Selecione um cliente...</option>
-          {#each clientes as c}
-            <option value={c.id}>{c.nome}</option>
-          {/each}
-        </select>
-      </div>
-
-      <div class="flex flex-col gap-3">
-        <Label for="seller">Vendedor:</Label>
-        <select
-          id="seller"
-          bind:value={orderData.vendedor_id}
-          class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <option value={0}>Selecione um vendedor...</option>
-          {#each vendedores as v}
-            <option value={v.id}>{v.nome}</option>
-          {/each}
-        </select>
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div class="flex flex-col gap-3">
-          <Label for="total">Valor Total:</Label>
-          <Input id="total" type="number" bind:value={orderData.valor_total} />
-        </div>
-        <div class="flex flex-col gap-3">
-          <Label for="status">Situação:</Label>
-          <select
-            id="status"
-            bind:value={orderData.situacao}
-            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value="emitido">Emitido</option>
-            <option value="vendido">Vendido</option>
-            <option value="devolvido">Devolvido</option>
-            <option value="retornado">Retornado</option>
-            <option value="cancelado">Cancelado</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <Dialog.Footer class="grid grid-cols-2 gap-5">
-      <Button variant="outline" onclick={() => (dialog = null)}>
-        Cancelar
-      </Button>
-      <Button onclick={save}>Salvar</Button>
-    </Dialog.Footer>
-  </Dialog.Content>
-</Dialog.Root>
+    </Card.Content>
+</Card.Root>

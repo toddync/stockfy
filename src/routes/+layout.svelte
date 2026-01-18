@@ -1,12 +1,16 @@
 <script lang="ts">
-    import favicon from "$lib/assets/favicon.svg";
-    import AppSidebar from "$lib/components/app-sidebar.svelte";
-    import * as Sidebar from "$lib/components/ui/sidebar/index.js";
-    import { Toaster } from "$lib/components/ui/sonner/index.js";
+    import { goto } from "$app/navigation";
+    import { page } from "$app/stores";
+    import favicon from "@/assets/favicon.svg";
+    import { auth } from "@/auth.svelte";
+    import AppSidebar from "@/components/app-sidebar.svelte";
+    import * as Sidebar from "@/components/ui/sidebar/index.js";
+    import { Toaster } from "@/components/ui/sonner/index.js";
+    import TittleBar from "@/components/tittle-bar.svelte";
+    import db from "@/db/db.svelte";
     import { onMount } from "svelte";
     import "./layout.css";
-    import db from "@/db/db.svelte";
-    import TittleBar from "@/components/tittle-bar.svelte";
+    import { Spinner } from "@/components/ui/spinner";
 
     let { children } = $props();
     let loaded = $state<boolean>(false);
@@ -14,8 +18,19 @@
     onMount(() => {
         (async () => {
             await db.init();
+            await auth.init();
             loaded = true;
         })();
+    });
+
+    $effect(() => {
+        if (!loaded) return;
+
+        if (!auth.user && $page.url.pathname !== "/login") {
+            goto("/login");
+        } else if (auth.user && $page.url.pathname === "/login") {
+            goto("/");
+        }
     });
 </script>
 
@@ -25,12 +40,24 @@
 <TittleBar />
 
 <main class="h-[calc(100svh-32px)]! mt-8 overflow-hidden">
-    <Sidebar.Provider>
-        <AppSidebar />
-        <main class="flex-1 p-1 overflow-auto max-h-[calc(100svh-32px)]!">
-            {#if loaded}
+    {#if loaded}
+        {#if auth.user}
+            <Sidebar.Provider>
+                <AppSidebar />
+                <main
+                    class="flex-1 p-1 overflow-auto max-h-[calc(100svh-32px)]!"
+                >
+                    {@render children?.()}
+                </main>
+            </Sidebar.Provider>
+        {:else}
+            <main class="flex-1 overflow-auto max-h-[calc(100svh-32px)]!">
                 {@render children?.()}
-            {/if}
-        </main>
-    </Sidebar.Provider>
+            </main>
+        {/if}
+    {:else}
+        <div class="h-full w-full flex items-center justify-center">
+            <Spinner />
+        </div>
+    {/if}
 </main>

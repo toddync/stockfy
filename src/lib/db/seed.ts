@@ -1,169 +1,84 @@
 export default `
--- Disable Foreign Key checks temporarily
-PRAGMA foreign_keys = OFF;
+    INSERT INTO pracas (id, codigo, nome) VALUES
+    (1, 'RJ01', 'Rio de Janeiro - Zona Sul'),
+    (2, 'RJ02', 'Baixada Fluminense');
 
--- ==========================================
--- 1. BASE TABLES
--- ==========================================
+    INSERT INTO rotas (id, codigo, nome, bairro, praca_id) VALUES
+    (1, 'R001', 'Rota Copacabana', 'Copacabana', 1),
+    (2, 'R002', 'Rota Caxias Centro', 'Centro', 2);
 
--- Praças
-INSERT INTO \`pracas\` (\`id\`, \`codigo\`, \`nome\`) VALUES
-(1, '001', 'Rio de Janeiro - Centro'),
-(2, '002', 'Niterói');
+    INSERT INTO produto_grupos (id, codigo, descricao) VALUES
+    (1, 'BEB', 'Bebidas'),
+    (2, 'ALI', 'Alimentos'),
+    (3, 'LIM', 'Limpeza');
 
--- Rotas
-INSERT INTO \`rotas\` (\`id\`, \`codigo\`, \`praca_id\`, \`bairro\`, \`nome\`) VALUES
-(1, 'R001', 1, 'Centro', 'Rota Central'),
-(2, 'R002', 2, 'Zona Sul', 'Rota Costeira'),
-(3, 'R003', 1, 'Zona Norte', 'Rota Industrial');
+    INSERT INTO tags (id, nome) VALUES
+    (1, 'Refrigerante'),
+    (2, 'Alcoólico'),
+    (3, 'Snack'),
+    (4, 'Promoção');
 
--- Produto Grupos
-INSERT INTO \`produto_grupos\` (\`id\`, \`codigo\`, \`descricao\`) VALUES
-(1, 'GRP01', 'Vestuário'),
-(2, 'GRP02', 'Calçados'),
-(3, 'GRP03', 'Acessórios');
+    INSERT INTO vendedores (id, codigo, nome, email, telefone, ativo) VALUES
+    (1, 'V01', 'Carlos Silva', 'carlos@vendas.com', '21999998888', 1),
+    (2, 'V02', 'Mariana Souza', 'mariana@vendas.com', '21988887777', 1);
 
--- Tags
-INSERT INTO \`tags\` (\`id\`, \`nome\`) VALUES
-(1, 'Promoção'),
-(2, 'Lançamento'),
-(3, 'Outlet');
+    INSERT INTO vendedor_pracas (vendedor_id, praca_id) VALUES
+    (1, 1), -- Carlos works in Zona Sul
+    (2, 2); -- Mariana works in Baixada
 
--- Vendedores
-INSERT INTO \`vendedores\` (\`id\`, \`codigo\`, \`nome\`, \`cpf\`, \`email\`, \`tabela_preco\`, \`cidade\`, \`estado\`) VALUES
-(1, 'VEND01', 'Carlos Silva', '123.456.789-00', 'carlos@empresa.com', 'A', 'São Paulo', 'SP'),
-(2, 'VEND02', 'Mariana Souza', '987.654.321-00', 'mariana@empresa.com', 'B', 'Rio de Janeiro', 'RJ');
+    INSERT INTO fornecedores (id, razao_social, nome_fantasia, tipo_pessoa, documento, cidade) VALUES
+    (1, 'Distribuidora de Bebidas Rio Ltda', 'Rio Drinks', 'J', '12345678000199', 'Rio de Janeiro'),
+    (2, 'Indústria de Alimentos Saboroso', 'Saboroso', 'J', '98765432000100', 'São Paulo');
 
--- Fornecedores
-INSERT INTO \`fornecedores\` (\`id\`, \`razao_social\`, \`marca\`, \`tipo_pessoa\`, \`cnpj\`, \`cidade\`, \`estado\`, \`ativo\`) VALUES
-(1, 'Têxtil Brasil LTDA', 'MegaFabrics', 'J', '12.345.678/0001-90', 'Americana', 'SP', 1),
-(2, 'Couros do Sul SA', 'LeatherKing', 'J', '98.765.432/0001-10', 'Porto Alegre', 'RS', 1);
+    INSERT INTO clientes (id, nome, cpf_cnpj, endereco, bairro, cidade, rota_id, praca_id, limite_credito) VALUES
+    (1, 'Bar do Zé', '11122233344', 'Av. Atlântica, 100', 'Copacabana', 'Rio de Janeiro', 1, 1, 5000.00),
+    (2, 'Mercadinho da Família', '55566677788', 'Rua José de Alencar, 50', 'Centro', 'Duque de Caxias', 2, 2, 2000.00);
 
--- Usuarios
-INSERT INTO \`usuarios\` (\`id\`, \`nome\`, \`senha_hash\`, \`ativo\`) VALUES
-(1, 'admin', 'hash_senha_secreta_123', 1),
-(2, 'gerente', 'hash_senha_gerente_456', 1);
+    INSERT INTO produtos (id, codigo, descricao, grupo_id, preco_custo, preco_venda, preco_venda_b) VALUES
+    (1, 'COCA2L', 'Coca Cola 2 Litros', 1, 5.50, 8.00, 7.50);
 
--- ==========================================
--- 2. MAIN ENTITIES
--- ==========================================
+    INSERT INTO produto_variacoes (id, produto_id, sku, estoque_atual) VALUES
+    (1, 1, 'COCA2L-UNI', 100.00); -- 100 units in stock
 
--- Clientes
--- Note: praça string removed from schema? No, I kept it as praca_id. Schema has praca_id and tabela_preco.
-INSERT INTO \`clientes\` (\`id\`, \`nome\`, \`cpf_cnpj\`, \`rota_id\`, \`vendedor_id\`, \`praca_id\`, \`tabela_preco\`, \`cidade\`, \`estado\`, \`limite_credito\`, \`ativo\`) VALUES
-(1, 'Loja da Esquina', '11.111.111/0001-11', 1, 1, 1, 'A', 'São Paulo', 'SP', 5000.00, 1),
-(2, 'Boutique Chique', '22.222.222/0001-22', 2, 2, 2, 'B', 'Rio de Janeiro', 'RJ', 12000.00, 1),
-(3, 'Mercadão Popular', '33.333.333/0001-33', 3, 1, 1, 'A', 'São Paulo', 'SP', 8000.00, 1);
+    INSERT INTO produto_tags (produto_id, tag_id) VALUES (1, 1); -- Coca is Refrigerante
 
--- Produtos
-INSERT INTO \`produtos\` (\`id\`, \`codigo\`, \`descricao\`, \`grupo_id\`, \`preco_custo\`, \`preco_venda_a\`, \`preco_venda_b\`, \`preco_minimo\`) VALUES
-(1, 'P001', 'Camiseta Básica Algodão', 1, 15.00, 35.00, 40.00, 30.00),
-(2, 'P002', 'Calça Jeans Skinny', 1, 40.00, 120.00, 130.00, 100.00),
-(3, 'P003', 'Tênis Esportivo', 2, 80.00, 250.00, 270.00, 220.00),
-(4, 'P004', 'Boné Aba Reta', 3, 10.00, 45.00, 50.00, 40.00);
+    INSERT INTO produtos (id, codigo, descricao, grupo_id, preco_custo, preco_venda, preco_venda_b) VALUES
+    (2, 'CHIPS100', 'Batata Chips Clássica 100g', 2, 3.00, 5.50, 5.00);
 
--- ==========================================
--- 3. SUB-ENTITIES
--- ==========================================
+    INSERT INTO produto_variacoes (id, produto_id, sku, estoque_atual) VALUES
+    (2, 2, 'CHIPS100-UNI', 50.00); -- 50 units in stock
 
--- Produto Variações
-INSERT INTO \`produto_variacoes\` (\`id\`, \`produto_id\`, \`sku\`, \`tamanho\`, \`cor\`, \`estoque_atual\`) VALUES
-(1, 1, 'P001-P-BR', 'P', 'Branco', 100.00),
-(2, 1, 'P001-M-BR', 'M', 'Branco', 150.00),
-(3, 1, 'P001-G-PT', 'G', 'Preto', 80.00),
-(4, 2, 'P002-38-AZ', '38', 'Azul', 50.00),
-(5, 3, 'P003-42-VM', '42', 'Vermelho', 20.00);
+    INSERT INTO produto_tags (produto_id, tag_id) VALUES (2, 3); -- Chips is Snack
 
--- Produto Tags
-INSERT INTO \`produto_tags\` (\`produto_id\`, \`tag_id\`) VALUES
-(1, 1),
-(3, 2);
+    INSERT INTO movimentacoes_estoque (tipo, variacao_id, quantidade, data_movimento) VALUES
+    ('entrada_compra', 1, 100, CURRENT_TIMESTAMP), -- 100 Cocas
+    ('entrada_compra', 2, 50, CURRENT_TIMESTAMP);  -- 50 Chips
 
--- ==========================================
--- 4. TRANSACTIONS
--- ==========================================
+    INSERT INTO pedidos (id, numero_pedido, cliente_id, vendedor_id, data_pedido, situacao, valor_bruto, valor_liquido, tipo_pedido) VALUES
+    (1, 'PED-1001', 1, 1, DATE('now', '-1 day'), 'faturado', 80.00, 80.00, 'venda');
 
--- Pedidos
-INSERT INTO \`pedidos\` (\`id\`, \`numero_pedido\`, \`cliente_id\`, \`vendedor_id\`, \`data_pedido\`, \`valor_total\`, \`situacao\`) VALUES
-(1, 'PED-1001', 1, 1, '2023-10-01', 350.00, 'faturado'),
-(2, 'PED-1002', 2, 2, '2023-10-02', 1200.00, 'pendente'),
-(3, 'PED-1003', 1, 1, '2023-10-03', 70.00, 'cancelado');
+    INSERT INTO pedido_itens (pedido_id, produto_id, variacao_id, quantidade_saida, quantidade_retorno, preco_unitario) VALUES
+    (1, 1, 1, 10, 0, 8.00); -- 10 Cocas * 8.00 = 80.00
 
--- Pedido Itens
-INSERT INTO \`pedido_itens\` (\`id\`, \`pedido_id\`, \`produto_id\`, \`variacao_id\`, \`quantidade_saida\`, \`preco_venda\`) VALUES
-(1, 1, 1, 1, 10, 35.00),
-(2, 2, 2, 4, 10, 120.00),
-(3, 3, 1, 2, 2, 35.00);
+    INSERT INTO movimentacoes_estoque (tipo, variacao_id, quantidade, referencia_id, referencia_tabela) VALUES
+    ('saida_venda', 1, -10, 1, 'pedidos');
+    UPDATE produto_variacoes SET estoque_atual = 90 WHERE id = 1;
 
--- Compras
-INSERT INTO \`compras\` (\`id\`, \`numero_pedido\`, \`fornecedor_id\`, \`data_pedido\`, \`valor_total_nota\`, \`situacao\`) VALUES
-(1, 'COMP-500', 1, '2023-09-01', 5000.00, 'finalizado');
+    INSERT INTO pedidos (id, numero_pedido, cliente_id, vendedor_id, data_pedido, situacao, valor_bruto, valor_liquido) VALUES
+    (2, 'PED-1002', 2, 2, DATE('now'), 'pendente', 0, 0);
 
--- Compra Itens
-INSERT INTO \`compra_itens\` (\`id\`, \`compra_id\`, \`produto_id\`, \`variacao_id\`, \`quantidade\`, \`preco_compra\`, \`valor_total\`) VALUES
-(1, 1, 1, 1, 200, 12.50, 2500.00),
-(2, 1, 1, 2, 200, 12.50, 2500.00);
+    INSERT INTO pedido_itens (pedido_id, produto_id, variacao_id, quantidade_saida, quantidade_retorno, preco_unitario) VALUES
+    (2, 2, 2, 20, 0, 5.50);
 
--- Contas Financeiras
-INSERT INTO \`contas_financeiras\` (\`id\`, \`data_emissao\`, \`tipo_documento\`, \`numero_documento\`, \`valor\`, \`data_vencimento\`, \`situacao\`, \`cliente_id\`, \`vendedor_id\`, \`sinal\`) VALUES
-(1, '2023-10-01', 'BOLETO', 'DOC-1001', 350.00, '2023-11-01', 'pendente', 1, 1, '+'),
-(2, '2023-09-01', 'NF', 'DOC-COMP500', 5000.00, '2023-10-01', 'pago', NULL, NULL, '-');
 
--- Movimentações Estoque
-INSERT INTO \`movimentacoes_estoque\` (\`id\`, \`tipo_movimentacao\`, \`numero_documento\`, \`data_documento\`, \`cliente_id\`, \`valor_total\`) VALUES
-(1, 'devolucao', 'DEV-001', '2023-10-05', 1, 35.00);
+    INSERT INTO contas_financeiras (descricao, tipo, categoria, cliente_id, pedido_id, valor_original, valor_restante, data_vencimento, situacao) VALUES
+    ('Venda PED-1001', 'receita', 'Vendas', 1, 1, 80.00, 80.00, DATE('now', '+7 days'), 'pendente');
 
--- Movimentação Itens
-INSERT INTO \`movimentacao_itens\` (\`id\`, \`movimentacao_id\`, \`produto_id\`, \`variacao_id\`, \`quantidade\`, \`preco_custo\`) VALUES
-(1, 1, 1, 1, 1, 15.00);
+    INSERT INTO contas_financeiras (descricao, tipo, categoria, valor_original, valor_restante, data_vencimento, situacao) VALUES
+    ('Conta de Luz - Depósito', 'despesa', 'Administrativo', 250.00, 250.00, DATE('now', '+5 days'), 'pendente');
 
--- Etiquetas
-INSERT INTO \`etiquetas\` (\`id\`, \`cliente_id\`, \`nome_vendedor\`) VALUES
-(1, 1, 'Carlos Silva');
 
--- ==========================================
--- 5. MIGRATION & UPDATES
--- ==========================================
-
--- Praças
-INSERT OR IGNORE INTO \`pracas\` (\`codigo\`, \`nome\`) VALUES
-('001', 'Rio de Janeiro - Centro'),
-('002', 'Niterói'),
-('003', 'Baixada Fluminense'),
-('004', 'Região dos Lagos');
-
--- Permissões
-INSERT OR IGNORE INTO \`permissoes\` (\`chave\`, \`descricao\`) VALUES
-('ADMIN', 'Acesso total ao sistema'),
-('VENDAS_VIEW', 'Visualizar pedidos'),
-('VENDAS_EDIT', 'Criar/Editar pedidos'),
-('ESTOQUE_MANAGE', 'Gerenciar movimentações de estoque'),
-('FINANCEIRO_VIEW', 'Visualizar contas a pagar/receber'),
-('FINANCEIRO_BAIXA', 'Realizar baixa de títulos');
-
--- Usuario Permissões
-INSERT OR IGNORE INTO \`usuario_permissoes\` (\`usuario_id\`, \`permissao_id\`)
-SELECT 1, id FROM \`permissoes\`;
-
--- Solicitações
-INSERT OR IGNORE INTO \`solicitacoes\` (\`numero\`, \`vendedor_id\`, \`cliente_id\`, \`data_solicitacao\`, \`situacao\`) VALUES
-('SOL001', 1, 1, '2023-12-15', 'Pendente'),
-('SOL002', 2, 2, '2023-12-16', 'Aprovada'),
-('SOL003', 1, 3, '2023-12-17', 'Cancelada');
-
--- Resíduos
-INSERT OR IGNORE INTO \`residuos\` (\`data_movimento\`, \`item\`, \`numero_documento\`, \`valor_pago\`) VALUES
-('2023-12-10', 'Retalhos', 'RES001', 50.00),
-('2023-12-12', 'Embalagens', 'RES002', 25.50),
-('2023-12-14', 'Outros', 'RES003', 15.00);
-
--- Update relationships
-UPDATE \`rotas\` SET \`praca_id\` = 1 WHERE \`id\` = 1;
-UPDATE \`rotas\` SET \`praca_id\` = 2 WHERE \`id\` = 2;
-
-UPDATE \`clientes\` SET \`praca_id\` = 1, \`tabela_preco\` = 'A' WHERE \`id\` = 1;
-UPDATE \`clientes\` SET \`praca_id\` = 2, \`tabela_preco\` = 'B' WHERE \`id\` = 2;
-
--- Re-enable Foreign Key checks
-PRAGMA foreign_keys = ON;
+    INSERT INTO usuarios (username, password_hash, role, vendedor_id) VALUES
+    ('admin', 'admin', 'admin', NULL),
+    ('carlos_vendedor', 'carlos123', 'user', 1);
 `;

@@ -1,14 +1,9 @@
 <script lang="ts">
-    import * as Card from "$lib/components/ui/card/index.js";
-    import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-    import * as InputGroup from "$lib/components/ui/input-group/index.js";
-    import * as Table from "$lib/components/ui/table/index.js";
-    import LabeledInput from "@/components/labeled-input.svelte";
+    import * as Card from "@/components/ui/card/index.js";
+    import * as Table from "@/components/ui/table/index.js";
     import { Button } from "@/components/ui/button/index";
-    import Checkbox from "@/components/ui/checkbox/checkbox.svelte";
-    import { Label } from "@/components/ui/label/index";
-    import db, { queryHelper } from "@/db/db.svelte";
+    import { Spinner } from "@/components/ui/spinner";
+    import db from "@/db/db.svelte";
     import type { Fornecedor } from "@/types";
     import PencilLine from "@lucide/svelte/icons/pencil-line";
     import Plus from "@lucide/svelte/icons/plus";
@@ -16,47 +11,22 @@
     import Truck from "@lucide/svelte/icons/truck";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
+    import { goto } from "$app/navigation";
+    import Id from "@/id.svelte";
+    import PaginationControl from "@/components/PaginationControl.svelte";
 
     let suppliers = $state<Array<Fornecedor>>([]);
-    let supplierData = $state<Partial<Fornecedor>>({ ativo: true });
-    let document = $state({ value: "", kind: "CPF" });
-    let dialog = $state<string | null>(null);
+    let loading = $state(true);
+    let page = $state(1);
+    let perPage = 10;
+    let totalItems = $state(0);
 
-    async function save() {
-        try {
-            supplierData[document.kind.toLowerCase() as "cpf" | "cnpj"] =
-                document.value;
-
-            delete (supplierData as any).data_cadastro;
-
-            let q = queryHelper(supplierData);
-            let query = "";
-
-            if (supplierData.id) {
-                query = `UPDATE fornecedores SET ${q.setClauses} WHERE id = ${supplierData.id}`;
-            } else {
-                query = `INSERT INTO fornecedores (${q.columns}) VALUES (${q.placeholders})`;
-            }
-
-            await db.execute(query, q.values);
-
-            await load();
-            dialog = null;
-            toast.success(
-                `Fornecedor ${supplierData.id ? "atualizado" : "criado"} com sucesso!`,
-            );
-        } catch (e: unknown) {
-            let message = "Erro desconhecido";
-            if (e instanceof Error) {
-                message = e.message;
-            }
-            toast.error(`Falha ao salvar fornecedor: ${message}`);
-            console.error("Erro ao salvar fornecedor:", e);
-            dialog = null;
-        }
-    }
+    $effect(() => {
+        if (page) load();
+    });
 
     async function delete_(id: number) {
+        if (!confirm("Tem certeza que deseja excluir este fornecedor?")) return;
         try {
             await db.execute("DELETE FROM fornecedores WHERE id = $1", [id]);
             await load();
@@ -72,11 +42,20 @@
     }
 
     async function load() {
+        loading = true;
         try {
-            suppliers = (await db.select(
-                "SELECT * FROM fornecedores",
-                [],
-            )) as Array<Fornecedor>;
+            const offset = (page - 1) * perPage;
+            let countQuery = "SELECT COUNT(*) as count FROM fornecedores";
+            let selectQuery = "SELECT * FROM fornecedores";
+
+            selectQuery += ` ORDER BY razao_social LIMIT ${perPage} OFFSET ${offset}`;
+
+            const countResult = (await db.select(countQuery, [])) as [
+                { count: number },
+            ];
+            totalItems = countResult[0].count;
+
+            suppliers = (await db.select(selectQuery, [])) as Array<Fornecedor>;
         } catch (e: unknown) {
             let message = "Erro desconhecido";
             if (e instanceof Error) {
@@ -84,6 +63,8 @@
             }
             toast.error(`Falha ao carregar fornecedores: ${message}`);
             console.error("Erro ao carregar fornecedores:", e);
+        } finally {
+            loading = false;
         }
     }
 
@@ -91,182 +72,118 @@
 </script>
 
 <Card.Root class="m-10">
-    <Card.Header class="flex w-full">
-        <Card.Title class="text-3xl flex items-center gap-2">
-            <Truck class="h-8 w-8 text-primary" />
-            Gerenciamento de Fornecedores
-        </Card.Title>
+    <Card.Header class="flex flex-row items-center w-full">
+        <div>
+            <Card.Title class="text-3xl flex items-center gap-2">
+                <Truck class="h-8 w-8 text-primary" />
+                Gerenciamento de Fornecedores
+            </Card.Title>
+            <Card.Description
+                >Gerencie seus fornecedores e parceiros comerciais.</Card.Description
+            >
+        </div>
         <Button
             class="ml-auto cursor-pointer"
             variant="outline"
             size="lg"
             onclick={() => {
-                dialog = "new";
+                goto("/fornecedores/novo");
             }}
         >
             Novo fornecedor
-            <Plus class="stroke-2" />
+            <Plus class="ml-2 h-4 w-4" />
         </Button>
     </Card.Header>
     <Card.Content>
-        <Table.Root>
-            <Table.Caption>Lista de fornecedores.</Table.Caption>
-            <Table.Header>
-                <Table.Row>
-                    <Table.Head>Marca</Table.Head>
-                    <Table.Head>Razão Social</Table.Head>
-                    <Table.Head>CPF/CNPJ</Table.Head>
-                    <Table.Head>Cidade</Table.Head>
-                    <Table.Head>Telefone</Table.Head>
-                    <Table.Head>Ativo</Table.Head>
-                    <Table.Head class="w-12.5"></Table.Head>
-                </Table.Row>
-            </Table.Header>
-            <Table.Body>
-                {#each suppliers as supplier, i (supplier.id)}
+        {#if loading}
+            <div class="flex h-48 items-center justify-center">
+                <Spinner class="h-8 w-8 text-primary" />
+            </div>
+        {:else}
+            <Table.Root>
+                <Table.Header>
                     <Table.Row>
-                        <Table.Cell>{supplier.marca}</Table.Cell>
-                        <Table.Cell>{supplier.razao_social}</Table.Cell>
-                        <Table.Cell>{supplier.cpf || supplier.cnpj}</Table.Cell>
-                        <Table.Cell>{supplier.cidade}</Table.Cell>
-                        <Table.Cell>{supplier.telefone}</Table.Cell>
-                        <Table.Cell>
-                            {supplier.ativo ? "Sim" : "Não"}
-                        </Table.Cell>
-                        <Table.Cell>
-                            <Button
-                                variant="ghost"
-                                size="icon-lg"
-                                onclick={() => {
-                                    supplierData = { ...supplier };
-
-                                    if (supplierData.cpf) {
-                                        document.kind = "CPF";
-                                        document.value = supplierData.cpf;
-                                    } else if (supplierData.cnpj) {
-                                        document.kind = "CNPJ";
-                                        document.value = supplierData.cnpj;
-                                    }
-
-                                    dialog = "edit";
-                                }}
-                            >
-                                <PencilLine
-                                    class="h-4 w-4 stroke-3 stroke-lime-400"
-                                />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon-lg"
-                                onclick={() => delete_(supplier.id)}
-                            >
-                                <Trash2
-                                    class="h-4 w-4 stroke-3 stroke-red-500"
-                                />
-                            </Button>
-                        </Table.Cell>
+                        <Table.Head>Razão Social / Nome Fantasia</Table.Head>
+                        <Table.Head>Tipo</Table.Head>
+                        <Table.Head>CPF/CNPJ</Table.Head>
+                        <Table.Head>Cidade/UF</Table.Head>
+                        <Table.Head>Telefone</Table.Head>
+                        <Table.Head>Ativo</Table.Head>
+                        <Table.Head class="w-12.5"></Table.Head>
                     </Table.Row>
-                {/each}
-            </Table.Body>
-        </Table.Root>
+                </Table.Header>
+                <Table.Body>
+                    {#each suppliers as supplier (supplier.id)}
+                        <Table.Row>
+                            <Table.Cell class="font-medium text-primary">
+                                {supplier.razao_social}
+                                {#if supplier.nome_fantasia}
+                                    <span
+                                        class="block text-xs text-muted-foreground italic"
+                                    >
+                                        {supplier.nome_fantasia}
+                                    </span>
+                                {/if}
+                            </Table.Cell>
+                            <Table.Cell>
+                                {supplier.tipo_pessoa === "F"
+                                    ? "Física"
+                                    : "Jurídica"}
+                            </Table.Cell>
+                            <Table.Cell>{supplier.documento}</Table.Cell>
+                            <Table.Cell>
+                                {supplier.cidade || "-"}{supplier.estado
+                                    ? `/${supplier.estado}`
+                                    : ""}
+                            </Table.Cell>
+                            <Table.Cell>{supplier.telefone || "-"}</Table.Cell>
+                            <Table.Cell>
+                                <span
+                                    class={`px-2 py-1 rounded-full text-xs font-semibold ${supplier.ativo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                                >
+                                    {supplier.ativo ? "Ativo" : "Inativo"}
+                                </span>
+                            </Table.Cell>
+                            <Table.Cell>
+                                <Button
+                                    variant="ghost"
+                                    size="icon-lg"
+                                    onclick={() => {
+                                        Id.id = supplier.id;
+                                        goto(`/fornecedores/id/edit`);
+                                    }}
+                                >
+                                    <PencilLine
+                                        class="h-4 w-4 stroke-3 stroke-lime-400"
+                                    />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon-lg"
+                                    onclick={() => delete_(supplier.id)}
+                                >
+                                    <Trash2
+                                        class="h-4 w-4 stroke-3 stroke-red-500"
+                                    />
+                                </Button>
+                            </Table.Cell>
+                        </Table.Row>
+                    {:else}
+                        <Table.Row>
+                            <Table.Cell
+                                colspan={7}
+                                class="text-center py-10 text-muted-foreground"
+                            >
+                                Nenhum fornecedor encontrado.
+                            </Table.Cell>
+                        </Table.Row>
+                    {/each}
+                </Table.Body>
+            </Table.Root>
+
+            <div class="mt-4">
+                <PaginationControl count={totalItems} {perPage} bind:page />
+            </div>
+        {/if}
     </Card.Content>
 </Card.Root>
-
-<Dialog.Root
-    open={dialog != null}
-    onOpenChange={(e) =>
-        e ? null : ((dialog = null), (supplierData = { ativo: true }))}
->
-    <Dialog.Content class="gap-10">
-        <Dialog.Header>
-            <Dialog.Title>
-                {#if dialog == "new"}
-                    Novo fornecedor
-                {:else if dialog == "edit"}
-                    Editar fornecedor
-                {/if}
-            </Dialog.Title>
-        </Dialog.Header>
-
-        <div class="flex flex-col gap-5">
-            <LabeledInput
-                label="Marca"
-                name="brand"
-                bind:value={supplierData.marca}
-                placeholder="..."
-            />
-
-            <LabeledInput
-                label="Razão Social"
-                name="name_"
-                bind:value={supplierData.razao_social}
-                placeholder="..."
-            />
-
-            <LabeledInput
-                label="Cidade"
-                name="city"
-                bind:value={supplierData.cidade}
-                placeholder="..."
-            />
-
-            <LabeledInput
-                label="Telefone"
-                name="Phone"
-                bind:value={supplierData.telefone}
-                placeholder="..."
-            />
-
-            <div class="grid w-full gap-3">
-                <Label>Documento:</Label>
-                <InputGroup.Root>
-                    <InputGroup.Input
-                        bind:value={document.value}
-                        placeholder={document.kind == "CPF"
-                            ? "XXX.XXX.XXX-XX"
-                            : "XX.XXX.XXX/XXXX-XX"}
-                    />
-                    <InputGroup.Addon align="inline-end">
-                        <DropdownMenu.Root>
-                            <DropdownMenu.Trigger>
-                                {#snippet child({ props })}
-                                    <InputGroup.Button
-                                        {...props}
-                                        variant="ghost"
-                                        size="sm"
-                                    >
-                                        {document.kind}
-                                    </InputGroup.Button>
-                                {/snippet}
-                            </DropdownMenu.Trigger>
-                            <DropdownMenu.Content align="end">
-                                <DropdownMenu.Item
-                                    onSelect={() => (document.kind = "CPF")}
-                                >
-                                    CPF
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Item
-                                    onSelect={() => (document.kind = "CNPJ")}
-                                >
-                                    CNPJ
-                                </DropdownMenu.Item>
-                            </DropdownMenu.Content>
-                        </DropdownMenu.Root>
-                    </InputGroup.Addon>
-                </InputGroup.Root>
-            </div>
-
-            <div class="flex gap-3">
-                <Label for="">Ativo:</Label>
-                <Checkbox bind:checked={supplierData.ativo} />
-            </div>
-        </div>
-
-        <Dialog.Footer class="grid grid-cols-2 gap-5">
-            <Button variant="outline" onclick={() => (dialog = null)}>
-                Cancelar
-            </Button>
-            <Button onclick={save}>Salvar</Button>
-        </Dialog.Footer>
-    </Dialog.Content>
-</Dialog.Root>

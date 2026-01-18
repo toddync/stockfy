@@ -40,10 +40,7 @@ UPDATE `rotas` SET `praca_id` = 1 WHERE `id` = 1;
 UPDATE `rotas` SET `praca_id` = 2 WHERE `id` = 2;
 UPDATE `clientes` SET `praca_id` = 1 WHERE `id` = 1;
 UPDATE `clientes` SET `tabela_preco` = 'A' WHERE `id` = 1;
-UPDATE `clientes` SET `vendedor_id` = 1 WHERE `id` = 1;
 UPDATE `clientes` SET `praca_id` = 2 WHERE `id` = 2;
 UPDATE `clientes` SET `tabela_preco` = 'B' WHERE `id` = 2;
-UPDATE `clientes` SET `vendedor_id` = 2 WHERE `id` = 2;
-UPDATE `clientes` SET `vendedor_id` = 1 WHERE `id` = 3;
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -1,20 +1,18 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import * as Sidebar from "$lib/components/ui/sidebar/index.js";
+    import { auth } from "@/auth.svelte";
+    import * as Sidebar from "@/components/ui/sidebar/index.js";
     import Boxes from "@lucide/svelte/icons/boxes";
-    import Package from "@lucide/svelte/icons/package";
     import DolarSign from "@lucide/svelte/icons/dollar-sign";
-    import FileText from "@lucide/svelte/icons/file-text";
     import HandBag from "@lucide/svelte/icons/handbag";
+    import LogOut from "@lucide/svelte/icons/log-out";
     import MapPin from "@lucide/svelte/icons/map-pin";
-    import Recycle from "@lucide/svelte/icons/recycle";
+    import Package from "@lucide/svelte/icons/package";
     import Route from "@lucide/svelte/icons/route";
-    import ShieldCheck from "@lucide/svelte/icons/shield-check";
     import ShoppingBag from "@lucide/svelte/icons/shopping-bag";
     import Tags from "@lucide/svelte/icons/tags";
     import Truck from "@lucide/svelte/icons/truck";
     import Undo2 from "@lucide/svelte/icons/undo-2";
-    import ShieldUser from "@lucide/svelte/icons/shield-user";
     import Users from "@lucide/svelte/icons/users";
     import Wallet from "@lucide/svelte/icons/wallet";
     import PathBtn from "./path-btn.svelte";
@@ -82,24 +80,8 @@
                     <MapPin /> Praças
                 </PathBtn>
 
-                <PathBtn path="/solicitacoes">
-                    <FileText /> Solicitações
-                </PathBtn>
-
-                <PathBtn path="/residuos">
-                    <Recycle /> Resíduos
-                </PathBtn>
-
-                <PathBtn path="/permissoes">
-                    <ShieldCheck /> Permissões
-                </PathBtn>
-
                 <PathBtn path="/etiquetas">
-                    <Tags /> Etiquetas
-                </PathBtn>
-
-                <PathBtn path="/usuario-permissoes">
-                    <ShieldUser /> Usuários/Permissões
+                    <Tags /> Tags
                 </PathBtn>
 
                 <PathBtn path="/produtos">
@@ -116,5 +98,17 @@
             </Sidebar.Menu>
         </Sidebar.Group>
     </Sidebar.Content>
-    <Sidebar.Footer />
+    <Sidebar.Footer>
+        <Sidebar.Menu>
+            <Sidebar.MenuItem>
+                <Sidebar.MenuButton
+                    onclick={() => auth.logout()}
+                    class="cursor-pointer text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                >
+                    <LogOut />
+                    <span>Sair</span>
+                </Sidebar.MenuButton>
+            </Sidebar.MenuItem>
+        </Sidebar.Menu>
+    </Sidebar.Footer>
 </Sidebar.Root>
