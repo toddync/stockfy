@@ -13,7 +13,10 @@
     import User from "@lucide/svelte/icons/user";
     import Briefcase from "@lucide/svelte/icons/briefcase";
     import Package from "@lucide/svelte/icons/package";
+    import Download from "@lucide/svelte/icons/download";
     import { onMount } from "svelte";
+    import jsPDF from "jspdf";
+    import autoTable from "jspdf-autotable";
     import { Label } from "@/components/ui/label";
     import Id from "@/id.svelte";
 
@@ -97,6 +100,146 @@
                 return "bg-gray-100 text-gray-700 border-gray-200";
         }
     }
+
+    function generatePDF() {
+        if (!pedido) return;
+
+        const doc = new jsPDF();
+        const primaryColor = [22, 22, 22]; // Dark color for headers
+
+        // Title
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.text(`Pedido #${pedido.numero_pedido}`, 15, 20);
+        
+        // Status Badge-like text
+        doc.setFontSize(12);
+        doc.setTextColor(100);
+        doc.text(`${pedido.situacao.toUpperCase()}`, 150, 20, { align: "right" });
+        doc.setTextColor(0);
+
+        // Date Info
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Emitido em: ${formatDate(pedido.data_pedido)}`, 15, 28);
+        if (pedido.data_entrega) {
+            doc.text(`Previsão de Entrega: ${formatDate(pedido.data_entrega)}`, 15, 33);
+        }
+
+        // Horizontal Line
+        doc.setDrawColor(200);
+        doc.line(15, 38, 195, 38);
+
+        // Client & Seller Section
+        const startY = 48;
+        
+        // Client Column
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text("DADOS DO CLIENTE", 15, startY);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(cliente?.nome || "Cliente Não Identificado", 15, startY + 6);
+        if (cliente) {
+            const endereco = [cliente.cidade, cliente.estado].filter(Boolean).join(" - ");
+            if (endereco) doc.text(endereco, 15, startY + 11);
+            if (cliente.email) doc.text(cliente.email, 15, startY + 16);
+            if (cliente.telefone) doc.text(cliente.telefone, 15, startY + 21);
+        }
+
+        // Seller Column
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text("VENDEDOR", 110, startY);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(vendedor?.nome || "Venda Direta", 110, startY + 6);
+
+        // Items Table
+        const tableBody = items.map(item => {
+            const qtd = item.quantidade_saida - (item.quantidade_retorno || 0);
+            const subtotal = (item.preco_unitario || 0) * qtd;
+            return [
+                item.codigo,
+                item.descricao,
+                qtd.toString(),
+                formatCurrency(item.preco_unitario),
+                formatCurrency(subtotal)
+            ];
+        });
+
+        autoTable(doc, {
+            startY: startY + 30,
+            head: [['Código', 'Descrição', 'Qtd', 'V. Unit.', 'Subtotal']],
+            body: tableBody,
+            theme: 'striped',
+            headStyles: { 
+                fillColor: [30, 30, 30],
+                textColor: 255,
+                fontStyle: 'bold'
+            },
+            columnStyles: {
+                0: { cellWidth: 25 }, // Código
+                1: { cellWidth: 'auto' }, // Descrição
+                2: { halign: 'center', cellWidth: 20 }, // Qtd
+                3: { halign: 'right', cellWidth: 30 }, // Unit
+                4: { halign: 'right', cellWidth: 35 }  // Subtotal
+            },
+            styles: { fontSize: 9, cellPadding: 3 },
+        });
+
+        // Totals Section
+        const finalY = (doc as any).lastAutoTable.finalY + 10;
+        const rightMargin = 195;
+        
+        doc.setFontSize(10);
+        
+        // Subtotal
+        const valorBruto = pedido.valor_bruto || (pedido as any).valor_total;
+        doc.text("Subtotal:", rightMargin - 40, finalY);
+        doc.text(formatCurrency(valorBruto), rightMargin, finalY, { align: "right" });
+
+        // Discount
+        const discount = pedido.valor_desconto || 0;
+        if (discount > 0) {
+            doc.setTextColor(200, 0, 0);
+            doc.text("Desconto:", rightMargin - 40, finalY + 6);
+            doc.text(`-${formatCurrency(discount)}`, rightMargin, finalY + 6, { align: "right" });
+            doc.setTextColor(0);
+        }
+
+        // Total
+        const total = pedido.valor_liquido || ((pedido as any).valor_total - discount);
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text("Total:", rightMargin - 40, finalY + 14);
+        doc.text(formatCurrency(total), rightMargin, finalY + 14, { align: "right" });
+
+        // Observations if any
+        if (pedido.observacoes) {
+            const obsY = finalY + 25;
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.text("Observações:", 15, obsY);
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(9);
+            
+            const splitObs = doc.splitTextToSize(pedido.observacoes, 120);
+            doc.text(splitObs, 15, obsY + 5);
+        }
+
+        // Footer w/ Page numbers
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for(let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text(`Página ${i} de ${pageCount}`, 195, 290, { align: "right" });
+            doc.text(`Gerado em ${new Date().toLocaleString()}`, 15, 290);
+        }
+
+        doc.save(`Pedido_${pedido.numero_pedido}.pdf`);
+    }
 </script>
 
 <div class="p-6 w-full space-y-6">
@@ -108,6 +251,13 @@
 
         {#if pedido}
             <div class="ml-auto flex gap-2">
+                <Button
+                    variant="outline"
+                    onclick={generatePDF}
+                >
+                    <Download class="mr-2 h-4 w-4" />
+                    PDF
+                </Button>
                 <Button
                     variant="outline"
                     onclick={() => {

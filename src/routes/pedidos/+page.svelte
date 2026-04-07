@@ -240,7 +240,7 @@
                                     variant="ghost"
                                     size="icon"
                                     onclick={() => {
-                                        Id.id - order.id;
+                                        Id.id = order.id;
                                         goto(`/pedidos/id`);
                                     }}
                                 >

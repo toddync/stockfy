@@ -14,14 +14,15 @@
     {#snippet children({ pages, range })}
         <div class="flex items-center justify-between w-full">
             <div class="text-sm text-muted-foreground">
-                Exibindo <span class="font-medium"
-                    >{(page - 1) * perPage + 1}</span
-                >
+                Exibindo
+                <span class="font-medium">{(page - 1) * perPage + 1}</span>
                 a
-                <span class="font-medium"
-                    >{Math.min(page * perPage, count)}</span
-                >
-                de <span class="font-medium">{count}</span> resultados
+                <span class="font-medium">
+                    {Math.min(page * perPage, count)}
+                </span>
+                de
+                <span class="font-medium">{count}</span>
+                resultados
             </div>
             <div class="flex items-center space-x-2">
                 <Pagination.Content>

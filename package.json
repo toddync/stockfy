@@ -43,6 +43,8 @@
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@tauri-apps/api": "^2.9.1",
 		"@tauri-apps/plugin-sql": "~2.3.1",
+		"jspdf": "^4.0.0",
+		"jspdf-autotable": "^5.0.7",
 		"svelte-tags-input": "^6.0.2",
 		"window": "link:@tauri-apps/api/window"
 	}
